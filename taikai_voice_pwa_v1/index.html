@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b57d0">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="style.css">
+<title>大会ナンバー受付</title>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <div class="title">大会ナンバー受付</div>
+    <div id="event">大会名未設定</div>
+    <div id="point">地点未設定</div>
+    <div id="staff">担当：未設定</div>
+    <div id="countdown">TOP予想：未設定</div>
+  </header>
+
+  <section class="panel">
+    <div id="modeBadge" class="badge">マラソン</div>
+    <div id="status" class="status">停止中</div>
+    <button id="voiceBtn" class="voice">🎤 音声受付開始</button>
+    <div class="hint">音声は1件ずつ自動登録し、登録後すぐ次を聞きます。</div>
+
+    <div class="manual">
+      <label for="numberInput">🔢 直接入力</label>
+      <input id="numberInput" inputmode="numeric" autocomplete="off" placeholder="例：1250 / 125-3">
+      <button id="registerBtn" class="register">登録</button>
+    </div>
+
+    <button id="muriBtn" class="muri">ムリ（1人カウント）</button>
+  </section>
+
+  <section class="stats">
+    <div><b id="okCount">0</b><span>番号登録</span></div>
+    <div><b id="muriCount">0</b><span>ムリ</span></div>
+    <div><b id="totalCount">0</b><span>総人数</span></div>
+  </section>
+
+  <section class="latest">
+    <div class="caption">最新</div>
+    <div id="latest">—</div>
+    <div id="latestSub"></div>
+  </section>
+
+  <section class="history">
+    <div class="caption">直近10件</div>
+    <div id="history"></div>
+  </section>
+
+  <section class="settings">
+    <button id="settingsBtn">⚙ 大会・地点設定</button>
+    <button id="installBtn" hidden>📱 ホーム画面に追加</button>
+  </section>
+
+  <div id="settingsPanel" class="modal" hidden>
+    <div class="dialog">
+      <h2>大会・地点設定</h2>
+      <label>大会名<input id="sEvent"></label>
+      <label>開催日<input id="sDate" type="date"></label>
+      <label>方式<select id="sMode"><option value="MARATHON">マラソン</option><option value="EKIDEN">駅伝</option></select></label>
+      <label>地点名<input id="sPoint" placeholder="フィニッシュ / 第1中継所 / 5km など"></label>
+      <label>担当者名<input id="sStaff"></label>
+      <label>TOP予想時刻<input id="sTop" placeholder="09:30:00"></label>
+      <label>Google Apps Script URL（任意）<input id="sEndpoint"></label>
+      <div class="dialogBtns"><button id="saveSettings">保存</button><button id="closeSettings">閉じる</button></div>
+      <p class="small">氏名はこのアプリに保存しません。属性も任意です。</p>
+    </div>
+  </div>
+</main>
+<script src="app/app.js"></script>
+</body>
+</html>
