@@ -79,6 +79,19 @@ function add(value, recognized = true) {
   processQueue();
 }
 
+function clearRecords() {
+  if (listening) stopRecognition();
+  if (!confirm("⚠️ 登録されている番号データをすべて削除します。\n\nこの操作は元に戻せません。\n\n大会名・開催日・地点名・担当者などの設定は残ります。\n\n本当に削除しますか？")) return;
+  records = [];
+  sendQueue = [];
+  ok = 0;
+  muri = 0;
+  save();
+  render();
+  $("settingsPanel").hidden = true;
+  $("status").textContent = "登録データを全消去しました";
+}
+
 async function processQueue() {
   if (isSending || sendQueue.length === 0 || !cfg.endpoint || !navigator.onLine) return;
   isSending = true;
@@ -167,6 +180,7 @@ $("numberInput").addEventListener("keydown", e => { if (e.key === "Enter") regis
 $("settingsBtn").onclick = openSettings;
 $("closeSettings").onclick = doCloseSettings;
 $("saveSettings").onclick = doSaveSettings;
+$("clearRecordsBtn").onclick = clearRecords;
 
 window.addEventListener("online", () => { render(); processQueue(); });
 window.addEventListener("offline", render);
