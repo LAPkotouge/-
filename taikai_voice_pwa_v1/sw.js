@@ -1,4 +1,4 @@
-const CACHE = "taikai-voice-v5";
+const CACHE = "taikai-voice-v6";
 
 self.addEventListener("install", event => {
   event.waitUntil(
@@ -18,9 +18,7 @@ self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(
-        keys
-          .filter(key => key !== CACHE)
-          .map(key => caches.delete(key))
+        keys.filter(key => key !== CACHE).map(key => caches.delete(key))
       )
     ).then(() => self.clients.claim())
   );
