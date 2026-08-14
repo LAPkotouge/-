@@ -22,6 +22,8 @@
     <div id="status" class="status">停止中</div>
     <button id="voiceBtn" class="voice" type="button">🎤 音声受付開始</button>
     <div class="hint">音声は1件ずつ自動登録し、登録後すぐ次を聞きます。</div>
+    <button id="manModeBtn" type="button" style="width:100%;margin-top:8px;padding:11px;border:1px solid #0b57d0;border-radius:10px;background:#fff;color:#0b57d0;font-weight:700;cursor:pointer;">🔢 万台番号モード：OFF</button>
+    <div id="manModeHint" class="hint">通常：1～99999。万台は「イチ・ゼロ・ゼロ・ゼロ・ヨン」のように数字を1桁ずつ読むと安全です。</div>
     <div class="manual">
       <label for="numberInput">🔢 直接入力</label>
       <input id="numberInput" inputmode="numeric" autocomplete="off" placeholder="例：1250 / 125-3">
@@ -57,7 +59,7 @@
     </div>
   </div>
 </main>
-<script src="app/app.js?v=8"></script>
+<script src="app/app.js?v=9"></script>
 <script>window.saveSettingsFallback=function(){try{const c={event:document.getElementById('sEvent').value||'大会名未設定',date:document.getElementById('sDate').value,mode:document.getElementById('sMode').value,point:document.getElementById('sPoint').value||'地点未設定',staff:document.getElementById('sStaff').value,top:document.getElementById('sTop').value,endpoint:document.getElementById('sEndpoint').value};localStorage.setItem('taikai_voice_cfg_v1',JSON.stringify(c));document.getElementById('event').textContent=c.event+(c.date?' '+c.date:'');document.getElementById('point').textContent=(c.mode==='EKIDEN'?'駅伝':'マラソン')+' '+c.point;document.getElementById('staff').textContent='担当：'+(c.staff||'未設定');document.getElementById('modeBadge').textContent=c.mode==='EKIDEN'?'駅伝':'マラソン';document.getElementById('settingsPanel').hidden=true;document.getElementById('status').textContent='設定を保存しました';}catch(e){alert('設定を保存できませんでした：'+e.message);}};</script>
 </body>
 </html>
