@@ -14,11 +14,9 @@ function load() {
     ok = records.filter(r => r.recognized).length;
     muri = records.filter(r => !r.recognized).length;
   } catch {}
-  try {
-    sendQueue = JSON.parse(localStorage.getItem(KEY_QUEUE) || "[]");
-  } catch {}
+  try { sendQueue = JSON.parse(localStorage.getItem(KEY_QUEUE) || "[]"); } catch {}
   render();
-  processQueue(); // 起動時に未送信キューがあれば送信試行
+  processQueue();
 }
 
 function save() {
@@ -41,25 +39,17 @@ function render() {
   $("history").innerHTML = records.slice(0, 10).map(r => `<div class="row"><span>${esc(r.value)}</span><span>${esc(r.time)}</span></div>`).join("");
   $("voiceBtn").textContent = listening ? "🛑 音声受付停止" : (cfg.mode === "EKIDEN" ? "🎤 通過ナンバー開始" : "🎤 フィニッシュナンバー開始");
   $("voiceBtn").classList.toggle("on", listening);
-  
-  // 未送信件数の状況表示
   const queueMsg = sendQueue.length > 0 ? ` ⚠️未送信${sendQueue.length}件` : "";
   $("status").textContent = (listening ? "🟢 音声受付中" : "停止中") + queueMsg;
 }
 
-function updateCountdown() {
-  $("countdown").textContent = cfg.top ? `TOP予想 ${cfg.top} ${countdownText()}` : "TOP予想：未設定";
-}
-
+function updateCountdown() { $("countdown").textContent = cfg.top ? `TOP予想 ${cfg.top} ${countdownText()}` : "TOP予想：未設定"; }
 function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 function now() { return new Date().toLocaleTimeString("ja-JP", { hour12: false }); }
 
 function normalizeSpeech(s) {
   if (!s) return "";
-  return s.normalize("NFKC")
-    .replace(/\s/g, "")
-    .replace(/[ー－―—]/g, "-")
-    .replace(/の区/g, "区");
+  return s.normalize("NFKC").replace(/\s/g, "").replace(/[ー－―—]/g, "-").replace(/の区/g, "区");
 }
 
 function parseNumber(raw) {
@@ -79,56 +69,32 @@ function parseNumber(raw) {
 }
 
 function add(value, recognized = true) {
-  // 一意の識別用IDを付与
   const rec = { id: Date.now() + "_" + Math.random().toString(36).substr(2, 5), value, recognized, time: now(), event: cfg.event, date: cfg.date, point: cfg.point, staff: cfg.staff, mode: cfg.mode };
   records.unshift(rec);
   records = records.slice(0, 100);
   if (recognized) ok++; else muri++;
-  
-  if (cfg.endpoint) {
-    sendQueue.push(rec);
-  }
-  
+  if (cfg.endpoint) sendQueue.push(rec);
   save();
   render();
   processQueue();
 }
 
-// 送信キューの非同期順次処理
 async function processQueue() {
-  if (isSending || sendQueue.length === 0 || !cfg.endpoint) return;
-  if (!navigator.onLine) return; // オフライン時は処理を保留
-
+  if (isSending || sendQueue.length === 0 || !cfg.endpoint || !navigator.onLine) return;
   isSending = true;
-
   while (sendQueue.length > 0 && navigator.onLine) {
     const item = sendQueue[0];
     try {
-      // 5秒のタイムアウト付き fetch
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-      await fetch(cfg.endpoint, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(item),
-        signal: controller.signal
-      });
-      
+      await fetch(cfg.endpoint, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(item), signal: controller.signal });
       clearTimeout(timeoutId);
-
-      // 送信成功したアイテムをキューから削除
-      sendQueue.shift();
-      save();
-      render();
+      sendQueue.shift(); save(); render();
     } catch (err) {
-      // 通信エラーやタイムアウト時は処理を中断し、次の復帰・定期リトライに委ねる
       console.warn("送信失敗。ローカルキューに保持します:", err);
       break;
     }
   }
-
   isSending = false;
 }
 
@@ -143,63 +109,32 @@ function startRecognition() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) { $("status").textContent = "このブラウザでは音声認識を利用できません。直接入力をご利用ください。"; return; }
   if (listening) { stopRecognition(); return; }
-  
-  listening = true;
-  render();
-  startOne();
+  listening = true; render(); startOne();
 }
 
 function startOne() {
   if (!listening) return;
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) return;
-
   try {
-    if (recognition) {
-      recognition.onend = null;
-      recognition.onerror = null;
-      try { recognition.abort(); } catch {}
-    }
-
+    if (recognition) { recognition.onend = null; recognition.onerror = null; try { recognition.abort(); } catch {} }
     recognition = new SR();
-    recognition.lang = "ja-JP";
-    recognition.interimResults = false;
-    recognition.continuous = false;
-    recognition.maxAlternatives = 5;
-
+    recognition.lang = "ja-JP"; recognition.interimResults = false; recognition.continuous = false; recognition.maxAlternatives = 5;
     recognition.onresult = e => {
       const alts = [...e.results[0]].map(x => x.transcript);
       let v = null;
       for (const x of alts) { v = parseNumber(x); if (v) break; }
-      if (v === "MURI") add("ムリ", false);
-      else if (v) add(v, true);
-      else $("status").textContent = "聞き取りましたが番号判定できません。もう一度。";
+      if (v === "MURI") add("ムリ", false); else if (v) add(v, true); else $("status").textContent = "聞き取りましたが番号判定できません。もう一度。";
     };
-
-    recognition.onerror = e => {
-      if (listening && e.error !== 'aborted') {
-        $("status").textContent = `音声エラー：${e.error} （直接入力も使用できます）`;
-      }
-    };
-
-    recognition.onend = () => {
-      if (listening) restartTimer = setTimeout(startOne, 200);
-    };
-
+    recognition.onerror = e => { if (listening && e.error !== "aborted") $("status").textContent = `音声エラー：${e.error} （直接入力も使用できます）`; };
+    recognition.onend = () => { if (listening) restartTimer = setTimeout(startOne, 200); };
     recognition.start();
-  } catch (e) {
-    if (listening) restartTimer = setTimeout(startOne, 500);
-  }
+  } catch (e) { if (listening) restartTimer = setTimeout(startOne, 500); }
 }
 
 function stopRecognition() {
-  listening = false;
-  clearTimeout(restartTimer);
-  if (recognition) {
-    recognition.onend = null;
-    try { recognition.stop(); } catch {}
-    recognition = null;
-  }
+  listening = false; clearTimeout(restartTimer);
+  if (recognition) { recognition.onend = null; try { recognition.stop(); } catch {} recognition = null; }
   render();
 }
 
@@ -207,10 +142,12 @@ function openSettings() {
   $("sEvent").value = cfg.event; $("sDate").value = cfg.date; $("sMode").value = cfg.mode; $("sPoint").value = cfg.point; $("sStaff").value = cfg.staff; $("sTop").value = cfg.top; $("sEndpoint").value = cfg.endpoint;
   $("settingsPanel").hidden = false;
 }
-function closeSettings() { $("settingsPanel").hidden = true; }
-function saveSettings() {
+
+function doCloseSettings() { $("settingsPanel").hidden = true; }
+
+function doSaveSettings() {
   cfg = { event: $("sEvent").value || "大会名未設定", date: $("sDate").value, mode: $("sMode").value, point: $("sPoint").value || "地点未設定", staff: $("sStaff").value, top: $("sTop").value, endpoint: $("sEndpoint").value };
-  save(); render(); closeSettings();
+  save(); render(); doCloseSettings();
 }
 
 function countdownText() {
@@ -223,32 +160,19 @@ function countdownText() {
   return past ? `経過 ${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}` : `あと ${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
 }
 
-// イベントリスナー設定
 $("voiceBtn").onclick = startRecognition;
 $("registerBtn").onclick = registerManual;
 $("muriBtn").onclick = () => add("ムリ", false);
 $("numberInput").addEventListener("keydown", e => { if (e.key === "Enter") registerManual(); });
 $("settingsBtn").onclick = openSettings;
-$("closeSettings").onclick = closeSettings;
-$("saveSettings").onclick = saveSettings;
+$("closeSettings").onclick = doCloseSettings;
+$("saveSettings").onclick = doSaveSettings;
 
-// オンライン・オフライン切り替えイベント
-window.addEventListener("online", () => {
-  render();
-  processQueue();
-});
-window.addEventListener("offline", () => {
-  render();
-});
-
-// 15秒ごとに未送信データの再送を定期実行
+window.addEventListener("online", () => { render(); processQueue(); });
+window.addEventListener("offline", render);
 setInterval(processQueue, 15000);
-
-// 1秒周期はカウントダウン部分のみを更新
 setInterval(() => { if (cfg.top) updateCountdown(); }, 1000);
-
 window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); deferredInstall = e; $("installBtn").hidden = false; });
 $("installBtn").onclick = async () => { if (deferredInstall) { deferredInstall.prompt(); await deferredInstall.userChoice; deferredInstall = null; $("installBtn").hidden = true; } };
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
-
 load();
