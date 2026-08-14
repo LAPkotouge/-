@@ -17,44 +17,29 @@
     <div id="staff">担当：未設定</div>
     <div id="countdown">TOP予想：未設定</div>
   </header>
-
   <section class="panel">
     <div id="modeBadge" class="badge">マラソン</div>
     <div id="status" class="status">停止中</div>
-    <button id="voiceBtn" class="voice">🎤 音声受付開始</button>
+    <button id="voiceBtn" class="voice" type="button">🎤 音声受付開始</button>
     <div class="hint">音声は1件ずつ自動登録し、登録後すぐ次を聞きます。</div>
-
     <div class="manual">
       <label for="numberInput">🔢 直接入力</label>
       <input id="numberInput" inputmode="numeric" autocomplete="off" placeholder="例：1250 / 125-3">
-      <button id="registerBtn" class="register">登録</button>
+      <button id="registerBtn" class="register" type="button">登録</button>
     </div>
-
-    <button id="muriBtn" class="muri">ムリ（1人カウント）</button>
+    <button id="muriBtn" class="muri" type="button">ムリ（1人カウント）</button>
   </section>
-
   <section class="stats">
     <div><b id="okCount">0</b><span>番号登録</span></div>
     <div><b id="muriCount">0</b><span>ムリ</span></div>
     <div><b id="totalCount">0</b><span>総人数</span></div>
   </section>
-
-  <section class="latest">
-    <div class="caption">最新</div>
-    <div id="latest">—</div>
-    <div id="latestSub"></div>
-  </section>
-
-  <section class="history">
-    <div class="caption">直近10件</div>
-    <div id="history"></div>
-  </section>
-
+  <section class="latest"><div class="caption">最新</div><div id="latest">—</div><div id="latestSub"></div></section>
+  <section class="history"><div class="caption">直近10件</div><div id="history"></div></section>
   <section class="settings">
-    <button id="settingsBtn">⚙ 大会・地点設定</button>
-    <button id="installBtn" hidden>📱 ホーム画面に追加</button>
+    <button id="settingsBtn" type="button">⚙ 大会・地点設定</button>
+    <button id="installBtn" type="button" hidden>📱 ホーム画面に追加</button>
   </section>
-
   <div id="settingsPanel" class="modal" hidden>
     <div class="dialog">
       <h2>大会・地点設定</h2>
@@ -65,11 +50,28 @@
       <label>担当者名<input id="sStaff"></label>
       <label>TOP予想時刻<input id="sTop" placeholder="09:30:00"></label>
       <label>Google Apps Script URL（任意）<input id="sEndpoint"></label>
-      <div class="dialogBtns"><button type="button" id="saveSettings">保存</button><button type="button" id="closeSettings">閉じる</button></div>
+      <div class="dialogBtns">
+        <button type="button" id="saveSettings" onclick="window.saveSettingsFallback()">保存</button>
+        <button type="button" id="closeSettings" onclick="document.getElementById('settingsPanel').hidden=true">閉じる</button>
+      </div>
       <p class="small">氏名はこのアプリに保存しません。属性も任意です。</p>
     </div>
   </div>
 </main>
-<script src="app/app.js?v=4" defer></script>
+<script src="app/app.js?v=4"></script>
+<script>
+window.saveSettingsFallback = function(){
+  try {
+    const c={event:document.getElementById('sEvent').value||'大会名未設定',date:document.getElementById('sDate').value,mode:document.getElementById('sMode').value,point:document.getElementById('sPoint').value||'地点未設定',staff:document.getElementById('sStaff').value,top:document.getElementById('sTop').value,endpoint:document.getElementById('sEndpoint').value};
+    localStorage.setItem('taikai_voice_cfg_v1',JSON.stringify(c));
+    document.getElementById('event').textContent=c.event+(c.date?' '+c.date:'');
+    document.getElementById('point').textContent=(c.mode==='EKIDEN'?'駅伝':'マラソン')+' '+c.point;
+    document.getElementById('staff').textContent='担当：'+(c.staff||'未設定');
+    document.getElementById('modeBadge').textContent=c.mode==='EKIDEN'?'駅伝':'マラソン';
+    document.getElementById('settingsPanel').hidden=true;
+    document.getElementById('status').textContent='設定を保存しました';
+  } catch(e) { alert('設定を保存できませんでした：'+e.message); }
+};
+</script>
 </body>
 </html>
