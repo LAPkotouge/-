@@ -54,11 +54,12 @@
         <button type="button" id="saveSettings" onclick="window.saveSettingsFallback()">保存</button>
         <button type="button" id="closeSettings" onclick="document.getElementById('settingsPanel').hidden=true">閉じる</button>
       </div>
+      <button type="button" id="clearRecordsBtn" onclick="window.clearRecordsFallback()" style="width:100%;margin-top:14px;padding:12px;border:1px solid #c62828;border-radius:10px;background:#fff;color:#c62828;font-weight:700;cursor:pointer;">🗑 登録データを全消去</button>
       <p class="small">氏名はこのアプリに保存しません。属性も任意です。</p>
     </div>
   </div>
 </main>
-<script src="app/app.js?v=5"></script>
+<script src="app/app.js?v=6"></script>
 <script>
 window.saveSettingsFallback = function(){
   try {
@@ -71,6 +72,21 @@ window.saveSettingsFallback = function(){
     document.getElementById('settingsPanel').hidden=true;
     document.getElementById('status').textContent='設定を保存しました';
   } catch(e) { alert('設定を保存できませんでした：'+e.message); }
+};
+window.clearRecordsFallback = function(){
+  try {
+    if (!confirm('⚠️ 登録されている番号データをすべて削除します。\n\nこの操作は元に戻せません。\n\n大会名・開催日・地点名・担当者などの設定は残ります。\n\n本当に削除しますか？')) return;
+    localStorage.removeItem('taikai_voice_rec_v1');
+    localStorage.removeItem('taikai_voice_queue_v1');
+    document.getElementById('settingsPanel').hidden=true;
+    document.getElementById('okCount').textContent='0';
+    document.getElementById('muriCount').textContent='0';
+    document.getElementById('totalCount').textContent='0';
+    document.getElementById('latest').textContent='—';
+    document.getElementById('latestSub').textContent='';
+    document.getElementById('history').innerHTML='';
+    document.getElementById('status').textContent='登録データを全消去しました';
+  } catch(e) { alert('データを削除できませんでした：'+e.message); }
 };
 </script>
 </body>
