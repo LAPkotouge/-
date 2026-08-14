@@ -28,6 +28,7 @@
       <button id="registerBtn" class="register" type="button">登録</button>
     </div>
     <button id="muriBtn" class="muri" type="button">ムリ（1人カウント）</button>
+    <button id="cancelLastBtn" type="button" style="width:100%;margin-top:10px;padding:12px;border:1px solid #b3261e;border-radius:10px;background:#fff;color:#b3261e;font-weight:700;cursor:pointer;">↩ 直前をキャンセル</button>
   </section>
   <section class="stats">
     <div><b id="okCount">0</b><span>番号登録</span></div>
@@ -50,29 +51,13 @@
       <label>担当者名<input id="sStaff"></label>
       <label>TOP予想時刻<input id="sTop" placeholder="09:30:00"></label>
       <label>Google Apps Script URL（任意）<input id="sEndpoint"></label>
-      <div class="dialogBtns">
-        <button type="button" id="saveSettings" onclick="window.saveSettingsFallback()">保存</button>
-        <button type="button" id="closeSettings" onclick="document.getElementById('settingsPanel').hidden=true">閉じる</button>
-      </div>
+      <div class="dialogBtns"><button type="button" id="saveSettings" onclick="window.saveSettingsFallback()">保存</button><button type="button" id="closeSettings" onclick="document.getElementById('settingsPanel').hidden=true">閉じる</button></div>
       <button type="button" id="clearRecordsBtn" style="width:100%;margin-top:14px;padding:12px;border:1px solid #c62828;border-radius:10px;background:#fff;color:#c62828;font-weight:700;cursor:pointer;">🗑 登録データを全消去</button>
       <p class="small">氏名はこのアプリに保存しません。属性も任意です。</p>
     </div>
   </div>
 </main>
-<script src="app/app.js?v=6"></script>
-<script>
-window.saveSettingsFallback = function(){
-  try {
-    const c={event:document.getElementById('sEvent').value||'大会名未設定',date:document.getElementById('sDate').value,mode:document.getElementById('sMode').value,point:document.getElementById('sPoint').value||'地点未設定',staff:document.getElementById('sStaff').value,top:document.getElementById('sTop').value,endpoint:document.getElementById('sEndpoint').value};
-    localStorage.setItem('taikai_voice_cfg_v1',JSON.stringify(c));
-    document.getElementById('event').textContent=c.event+(c.date?' '+c.date:'');
-    document.getElementById('point').textContent=(c.mode==='EKIDEN'?'駅伝':'マラソン')+' '+c.point;
-    document.getElementById('staff').textContent='担当：'+(c.staff||'未設定');
-    document.getElementById('modeBadge').textContent=c.mode==='EKIDEN'?'駅伝':'マラソン';
-    document.getElementById('settingsPanel').hidden=true;
-    document.getElementById('status').textContent='設定を保存しました';
-  } catch(e) { alert('設定を保存できませんでした：'+e.message); }
-};
-</script>
+<script src="app/app.js?v=7"></script>
+<script>window.saveSettingsFallback=function(){try{const c={event:document.getElementById('sEvent').value||'大会名未設定',date:document.getElementById('sDate').value,mode:document.getElementById('sMode').value,point:document.getElementById('sPoint').value||'地点未設定',staff:document.getElementById('sStaff').value,top:document.getElementById('sTop').value,endpoint:document.getElementById('sEndpoint').value};localStorage.setItem('taikai_voice_cfg_v1',JSON.stringify(c));document.getElementById('event').textContent=c.event+(c.date?' '+c.date:'');document.getElementById('point').textContent=(c.mode==='EKIDEN'?'駅伝':'マラソン')+' '+c.point;document.getElementById('staff').textContent='担当：'+(c.staff||'未設定');document.getElementById('modeBadge').textContent=c.mode==='EKIDEN'?'駅伝':'マラソン';document.getElementById('settingsPanel').hidden=true;document.getElementById('status').textContent='設定を保存しました';}catch(e){alert('設定を保存できませんでした：'+e.message);}};</script>
 </body>
 </html>
