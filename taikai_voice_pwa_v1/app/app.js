@@ -4,7 +4,7 @@ const KEY_REC = "taikai_voice_rec_v1";
 const KEY_QUEUE = "taikai_voice_queue_v1";
 let cfg = { event:"大会名未設定", date:"", mode:"MARATHON", point:"地点未設定", staff:"", top:"", endpoint:"" };
 let records=[], sendQueue=[], ok=0, muri=0, recognition=null, listening=false, restartTimer=null, deferredInstall=null, isSending=false;
-function load(){try{Object.assign(cfg,JSON.parse(localStorage.getItem(KEY_CFG)||"{}"));}catch{} try{records=JSON.parse(localStorage.getItem(KEY_REC)||"[]");}catch{records=[];} ok=records.filter(r=>r.recognized&&!r.cancelled).length; muri=records.filter(r=>!r.recognized&&!r.cancelled).length; try{sendQueue=JSON.parse(localStorage.getItem(KEY_QUEUE)||"[]");}catch{sendQueue=[];} render();processQueue();}
+function load(){try{Object.assign(cfg,JSON.parse(localStorage.getItem(KEY_CFG)||"{}"));}catch{}try{records=JSON.parse(localStorage.getItem(KEY_REC)||"[]");}catch{records=[];}ok=records.filter(r=>r.recognized&&!r.cancelled).length;muri=records.filter(r=>!r.recognized&&!r.cancelled).length;try{sendQueue=JSON.parse(localStorage.getItem(KEY_QUEUE)||"[]");}catch{sendQueue=[];}render();processQueue();}
 function save(){localStorage.setItem(KEY_CFG,JSON.stringify(cfg));localStorage.setItem(KEY_REC,JSON.stringify(records));localStorage.setItem(KEY_QUEUE,JSON.stringify(sendQueue));}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':'&quot;',"'":"&#39;"}[c]));}
 function now(){return new Date().toLocaleTimeString("ja-JP",{hour12:false});}
@@ -15,9 +15,31 @@ function render(){
  $("history").innerHTML=records.filter(r=>!r.cancelled).slice(0,10).map(r=>`<div class="row"><span>${esc(r.value)}${r.duplicate?` <span style="color:#d32f2f;font-weight:700;margin-left:6px;">重複</span>`:""}</span><span>${esc(r.time)}</span></div>`).join("");$("voiceBtn").textContent=listening?"🛑 音声受付停止":(cfg.mode==="EKIDEN"?"🎤 通過ナンバー開始":"🎤 フィニッシュナンバー開始");$("voiceBtn").classList.toggle("on",listening);$("status").textContent=(listening?"🟢 音声受付中":"停止中")+(sendQueue.length?` ⚠️未送信${sendQueue.length}件`:"");
 }
 function normalizeSpeech(s){return(s||"").normalize("NFKC").replace(/\s/g,"").replace(/[ー－―—]/g,"-").replace(/の区/g,"区");}
-function parseNumber(raw){const s=normalizeSpeech(raw);if(/むり|無理/i.test(s))return"MURI";if(/キャンセル|きゃんせる|取り消し|とりけし|取消|戻す|もどす/.test(s))return"CANCEL";if(cfg.mode==="EKIDEN"){let m=s.match(/(\d{1,4})-(\d{1,2})/);if(!m)m=s.match(/(\d{1,4}).{0,3}?(\d{1,2})区/);if(!m)m=s.match(/(\d{1,4})の(\d{1,2})/);if(!m)return null;const a=Number(m[1]),b=Number(m[2]);return a>=1&&a<=9999&&b>=1&&b<=25?`${a}-${b}`:null;}const d=s.replace(/[^\d]/g,"");const n=Number(d);return d&&n>=1&&n<=99999?String(n):null;}
-function add(value,recognized=true){const duplicate=recognized&&records.some(r=>!r.cancelled&&r.recognized&&r.value===value);const rec={id:Date.now()+"_"+Math.random().toString(36).substr(2,5),value,recognized,duplicate,time:now(),event:cfg.event,date:cfg.date,point:cfg.point,staff:cfg.staff,mode:cfg.mode};records.unshift(rec);if(recognized)ok++;else muri++;if(cfg.endpoint)sendQueue.push(rec);save();render();processQueue();if(duplicate)$("status").textContent=`⚠️ ${value} は重複です`;
+const JP_DIGITS={"零":0,"〇":0,"一":1,"二":2,"三":3,"四":4,"五":5,"六":6,"七":7,"八":8,"九":9};
+const JP_SMALL={"十":10,"百":100,"千":1000};
+function parseJapaneseNumber(s){
+ s=s.replace(/せん/g,"千").replace(/ぜん/g,"千").replace(/ひゃく/g,"百").replace(/びゃく/g,"百").replace(/じゅう/g,"十").replace(/れい/g,"零").replace(/ゼロ/g,"零");
+ if(!/[一二三四五六七八九十百千万億〇零]/.test(s))return null;
+ let total=0,current=0,has=false;
+ for(const ch of s){if(JP_DIGITS[ch]!==undefined){current=JP_DIGITS[ch];has=true;}else if(JP_SMALL[ch]){total+=(current||1)*JP_SMALL[ch];current=0;has=true;}else if(ch==="万"){total+=(current||0)*10000;current=0;has=true;}else if(ch==="億"){total+=(current||0)*100000000;current=0;has=true;}}
+ if(!has)return null;return total+current;
 }
+function parseMarathonSpeech(s){
+ const compact=s.replace(/\s/g,"");
+ const jp=parseJapaneseNumber(compact);
+ if(jp!==null)return jp>=1&&jp<=99999?String(jp):null;
+ const d=compact.replace(/[^\d]/g,"");const n=Number(d);
+ if(!d)return null;
+ // 音声認識が「千三」を「1000 3」のように分割した場合も1003として補正
+ const parts=compact.match(/^(?:1000)([1-9]\d{0,2})$/);
+ if(parts){const corrected=1000+Number(parts[1]);if(corrected<=9999)return String(corrected);}
+ return n>=1&&n<=99999?String(n):null;
+}
+function parseNumber(raw){const s=normalizeSpeech(raw);if(/むり|無理/i.test(s))return"MURI";if(/キャンセル|きゃんせる|取り消し|とりけし|取消|戻す|もどす/.test(s))return"CANCEL";
+ if(cfg.mode==="EKIDEN"){let m=s.match(/(\d{1,4})-(\d{1,2})/);if(!m)m=s.match(/(\d{1,4}).{0,3}?(\d{1,2})区/);if(!m)m=s.match(/(\d{1,4})の(\d{1,2})/);if(!m)return null;const a=Number(m[1]),b=Number(m[2]);return a>=1&&a<=9999&&b>=1&&b<=25?`${a}-${b}`:null;}
+ return parseMarathonSpeech(s);
+}
+function add(value,recognized=true){const duplicate=recognized&&records.some(r=>!r.cancelled&&r.recognized&&r.value===value);const rec={id:Date.now()+"_"+Math.random().toString(36).substr(2,5),value,recognized,duplicate,time:now(),event:cfg.event,date:cfg.date,point:cfg.point,staff:cfg.staff,mode:cfg.mode};records.unshift(rec);if(recognized)ok++;else muri++;if(cfg.endpoint)sendQueue.push(rec);save();render();processQueue();if(duplicate)$("status").textContent=`⚠️ ${value} は重複です`;}
 function cancelLast(){const i=records.findIndex(r=>!r.cancelled);if(i<0){$("status").textContent="キャンセルする登録データがありません";return;}const r=records[i];r.cancelled=true;r.cancelledAt=now();r.cancelledBy="キャンセル";if(r.recognized)ok=Math.max(0,ok-1);else muri=Math.max(0,muri-1);sendQueue=sendQueue.filter(q=>q.id!==r.id);save();render();$("status").textContent=`直前の「${r.value}」をキャンセルしました`;}
 async function processQueue(){if(isSending||!sendQueue.length||!cfg.endpoint||!navigator.onLine)return;isSending=true;while(sendQueue.length&&navigator.onLine){const item=sendQueue[0];try{const c=new AbortController(),t=setTimeout(()=>c.abort(),5000);await fetch(cfg.endpoint,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify(item),signal:c.signal});clearTimeout(t);sendQueue.shift();save();render();}catch{break;}}isSending=false;}
 function registerManual(){const v=parseNumber($("numberInput").value.trim());if(v==="CANCEL"){cancelLast();$("numberInput").value="";return;}if(!v){alert(cfg.mode==="EKIDEN"?"駅伝は 125-3（1～9999×1～25区）で入力してください。":"1～99999の番号を入力してください。");return;}add(v==="MURI"?"ムリ":v,v!=="MURI");$("numberInput").value="";$("numberInput").focus();}
