@@ -57,7 +57,7 @@
     </div>
   </div>
 </main>
-<script src="app/app.js?v=7"></script>
+<script src="app/app.js?v=8"></script>
 <script>window.saveSettingsFallback=function(){try{const c={event:document.getElementById('sEvent').value||'大会名未設定',date:document.getElementById('sDate').value,mode:document.getElementById('sMode').value,point:document.getElementById('sPoint').value||'地点未設定',staff:document.getElementById('sStaff').value,top:document.getElementById('sTop').value,endpoint:document.getElementById('sEndpoint').value};localStorage.setItem('taikai_voice_cfg_v1',JSON.stringify(c));document.getElementById('event').textContent=c.event+(c.date?' '+c.date:'');document.getElementById('point').textContent=(c.mode==='EKIDEN'?'駅伝':'マラソン')+' '+c.point;document.getElementById('staff').textContent='担当：'+(c.staff||'未設定');document.getElementById('modeBadge').textContent=c.mode==='EKIDEN'?'駅伝':'マラソン';document.getElementById('settingsPanel').hidden=true;document.getElementById('status').textContent='設定を保存しました';}catch(e){alert('設定を保存できませんでした：'+e.message);}};</script>
 </body>
 </html>
