@@ -7,7 +7,7 @@
 <section class="stats"><div><b id="okCount">0</b><span>番号登録</span></div><div><b id="muriCount">0</b><span>ムリ</span></div><div><b id="totalCount">0</b><span>総人数</span></div></section><section class="latest"><div class="caption">最新</div><div id="latest">—</div><div id="latestSub"></div></section><section class="history"><div class="caption">直近10件</div><div id="history"></div></section>
 <section class="settings"><button id="settingsBtn" type="button">⚙ 大会・地点設定</button><button id="installBtn" type="button" hidden>📱 ホーム画面に追加</button></section>
 <div id="settingsPanel" class="modal" hidden><div class="dialog"><h2>大会・地点設定</h2><label>大会名<input id="sEvent"></label><label>開催日<input id="sDate" type="date"></label><label>方式<select id="sMode"><option value="MARATHON">マラソン</option><option value="EKIDEN">駅伝</option><option value="RELAY">リレーマラソン</option></select></label><label>地点名<input id="sPoint" placeholder="フィニッシュ / 第1中継所 / 5km など"></label><label>担当者名<input id="sStaff"></label><label>TOP予想時刻<input id="sTop" placeholder="09:30:00"></label><label id="relayGapWrap" hidden>周回差（再読み取り無効時間・1～60分）<input id="sRelayGap" type="number" min="1" max="60" step="1" value="1"></label><label>Google Apps Script URL（任意）<input id="sEndpoint"></label><div class="dialogBtns"><button type="button" id="saveSettings" onclick="window.saveSettingsFallback()">保存</button><button type="button" id="closeSettings" onclick="document.getElementById('settingsPanel').hidden=true">閉じる</button></div><button type="button" id="clearRecordsBtn" style="width:100%;margin-top:14px;padding:12px;border:1px solid #c62828;border-radius:10px;background:#fff;color:#c62828;font-weight:700;cursor:pointer;">🗑 登録データを全消去</button><p class="small">氏名はこのアプリに保存しません。属性も任意です。</p></div></div></main>
-<script src="app/app.js?v=12"></script><script>
+<script src="app/app.js?v=13"></script><script>
 window.saveSettingsFallback=function(){try{let m=document.getElementById('sMode').value,g=Math.max(1,Math.min(60,Number(document.getElementById('sRelayGap').value)||1));const c={event:document.getElementById('sEvent').value||'大会名未設定',date:document.getElementById('sDate').value,mode:m,point:document.getElementById('sPoint').value||'地点未設定',staff:document.getElementById('sStaff').value,top:document.getElementById('sTop').value,relayGap:g,endpoint:document.getElementById('sEndpoint').value};localStorage.setItem('taikai_voice_cfg_v1',JSON.stringify(c));location.reload()}catch(e){alert('設定を保存できませんでした：'+e.message);}};
 window.deleteNumberWithSheetSync=async function(){
   const before={};
@@ -19,7 +19,7 @@ window.deleteNumberWithSheetSync=async function(){
   if(!deleted||!cfg.endpoint)return;
   if(!navigator.onLine){document.getElementById('status').textContent='アプリから削除しました。オフラインのためスプレッドシートは未削除です。';return;}
   try{
-    await fetch(cfg.endpoint,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'delete',id:deleted.id})});
+    await fetch(cfg.endpoint,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'DELETE',id:deleted.id,point:deleted.point||cfg.point})});
     document.getElementById('status').textContent=`「${deleted.value}」をアプリとスプレッドシートから削除しました`;
   }catch(e){document.getElementById('status').textContent='アプリからは削除しましたが、スプレッドシートの削除に失敗しました。通信状態を確認してください。';}
 };
