@@ -38,7 +38,8 @@ function destinationLabel(){
 }
 
 function render(){
-  $("event").textContent = cfg.event + (cfg.date ? ` ${cfg.date}` : "");
+  $("event").textContent = cfg.event;
+  const eventDate=$("eventDate"); if(eventDate) eventDate.textContent=cfg.date ? `TOP ${cfg.date}` : "";
   $("point").textContent = modeName()+" "+cfg.point;
   $("staff").textContent = "担当："+(cfg.staff||"未設定");
   const dest=$("destination"); if(dest) dest.textContent="保存先："+destinationLabel();
@@ -125,42 +126,51 @@ function registerManual(){
   if(!v){alert(cfg.mode==="RELAY"?"1～99999の番号を入力してください。":manMode?"万台モードでは10,000～99,999を入力するか1桁ずつ読んでください。":cfg.mode==="EKIDEN"?"駅伝は 125-3（1～9999×1～25区）で入力してください。":"1～99999の番号を入力してください。");return}
   add(v==="MURI"?"ムリ":v,v!=="MURI",$("numberInput").value.trim());$("numberInput").value="";$("numberInput").focus();
 }
-function startRecognition(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){$("status").textContent="このブラウザでは音声認識を利用できません。直接入力をご利用ください。";return}if(listening){stopRecognition();return}listening=true;render();startOne();}
-function startOne(){if(!listening)return;const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return;try{if(recognition){recognition.onend=null;recognition.onerror=null;try{recognition.abort()}catch{}}recognition=new SR();recognition.lang="ja-JP";recognition.interimResults=false;recognition.continuous=false;recognition.maxAlternatives=5;recognition.onresult=e=>{const alts=[...e.results[0]].map(x=>x.transcript);let v=null;for(const x of alts){const p=parseNumber(x);if(p&&!v)v=p}showRecognitionRaw(alts.join(" / "));if(v==="CANCEL")cancelLast();else if(v==="MURI")add("ムリ",false,alts[0]||"");else if(v)add(v,true,alts[0]||"");else $("status").textContent=manMode?"万台モード：1～5桁を1桁ずつ読んでください。":"聞き取りましたが番号判定できません。もう一度。"};recognition.onerror=e=>{if(listening&&e.error!=="aborted")$("status").textContent=`音声エラー：${e.error}（直接入力も使用できます）`};recognition.onend=()=>{if(listening)restartTimer=setTimeout(startOne,200)};recognition.start()}catch{if(listening)restartTimer=setTimeout(startOne,500)}}
-function stopRecognition(){listening=false;clearTimeout(restartTimer);if(recognition){recognition.onend=null;try{recognition.stop()}catch{}recognition=null}render();}
-function openSettings(){$("sEvent").value=cfg.event;$("sDate").value=cfg.date;$("sMode").value=cfg.mode;$("sPoint").value=cfg.point;$("sStaff").value=cfg.staff;$("sTop").value=cfg.top;$("sRelayGap").value=cfg.relayGap;$("sEndpoint").value=cfg.endpoint;$("sSheetId").value=cfg.sheetId||"";const cs=$("connectionStatus");if(cs)cs.textContent=cfg.sheetName?`接続先：${cfg.sheetName}`:"";$("settingsPanel").hidden=false;render();}
-function doCloseSettings(){$("settingsPanel").hidden=true;}
-function doSaveSettings(){cfg={event:$("sEvent").value||"大会名未設定",date:$("sDate").value,mode:$("sMode").value,point:$("sPoint").value||"地点未設定",staff:$("sStaff").value,top:$("sTop").value,relayGap:Math.max(1,Math.min(60,Number($("sRelayGap").value)||1)),endpoint:$("sEndpoint").value.trim(),sheetId:$("sSheetId").value.trim(),sheetName:cfg.sheetName||""};save();render();doCloseSettings();}
-function countdownText(){if(!cfg.top)return"";const[h,m,s]=cfg.top.split(":").map(Number);if(!Number.isFinite(h)||!Number.isFinite(m))return"";const t=new Date();t.setHours(h,m,s||0,0);let d=t-Date.now(),past=d<0;d=Math.abs(d);const sec=Math.floor(d/1000);return past?`経過 ${Math.floor(sec/60)}:${String(sec%60).padStart(2,"0")}`:`あと ${Math.floor(sec/60)}:${String(sec%60).padStart(2,"0")}`;}
-async function testConnection(){
-  const endpoint=$("sEndpoint").value.trim();
-  const sheetId=$("sSheetId").value.trim();
-  const out=$("connectionStatus");
-  if(!endpoint){out.textContent="Apps Script URLを入力してください";return;}
-  if(!sheetId){out.textContent="スプレッドシートIDを入力してください";return;}
-  if(!navigator.onLine){out.textContent="❌ オフラインです。通信状態を確認してください";return;}
-
-  out.textContent="接続確認中…";
-  const c=new AbortController();
-  const timer=setTimeout(()=>c.abort(),15000);
-  try{
-    await fetch(endpoint,{
-      method:"POST",
-      mode:"no-cors",
-      headers:{"Content-Type":"text/plain;charset=utf-8"},
-      body:JSON.stringify({action:"PING",sheetId:sheetId}),
-      signal:c.signal
-    });
-    clearTimeout(timer);
-    cfg.sheetId=sheetId;
-    cfg.sheetName="";
-    save();
-    render();
-    out.textContent="✅ 接続要求を送信できました。保存後、テスト番号を1件登録してスプレッドシートへの記録を確認してください。";
-  }catch(e){
-    clearTimeout(timer);
-    out.textContent="❌ 接続確認を送信できませんでした。通信状態またはApps Script URLを確認してください。";
-  }
+function countdownText(){
+  if(!cfg.top)return ""; const parts=cfg.top.split(":").map(Number); if(parts.length<2)return ""; const d=new Date(),target=new Date();target.setHours(parts[0],parts[1],parts[2]||0,0);let sec=Math.floor((target-d)/1000);const sign=sec<0?"+":"-";sec=Math.abs(sec);const h=String(Math.floor(sec/3600)).padStart(2,"0"),m=String(Math.floor(sec%3600/60)).padStart(2,"0"),s=String(sec%60).padStart(2,"0");return `${sign}${h}:${m}:${s}`;
+}
+function startRecognition(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){alert("このブラウザは音声認識に対応していません。Chromeを使用してください。");return}
+  recognition=new SR();recognition.lang="ja-JP";recognition.interimResults=false;recognition.continuous=false;
+  recognition.onresult=e=>{const t=e.results[0][0].transcript;showRecognitionRaw(t);const v=parseNumber(t);if(v==="CANCEL")cancelLast();else if(v==="MURI")add("ムリ",false,t);else if(v)add(v,true,t);else{$("status").textContent=`認識できません：「${t}」`;}};
+  recognition.onerror=e=>{if(e.error!=="aborted")$("status").textContent="音声認識エラー："+e.error;};
+  recognition.onend=()=>{if(listening){clearTimeout(restartTimer);restartTimer=setTimeout(()=>{try{recognition.start()}catch{}},180)}};
+  listening=true;render();try{recognition.start()}catch{}
+}
+function stopRecognition(){listening=false;clearTimeout(restartTimer);try{recognition&&recognition.abort()}catch{}render()}
+function fillSettings(){ $("sEvent").value=cfg.event==="大会名未設定"?"":cfg.event;$("sDate").value=cfg.date;$("sMode").value=cfg.mode;$("sPoint").value=cfg.point==="地点未設定"?"":cfg.point;$("sStaff").value=cfg.staff;$("sTop").value=cfg.top;$("sRelayGap").value=cfg.relayGap;$("sEndpoint").value=cfg.endpoint;$("sSheetId").value=cfg.sheetId||"";const rw=$("relayGapWrap");if(rw)rw.hidden=cfg.mode!=="RELAY";const cs=$("connectionStatus");if(cs)cs.textContent=cfg.sheetName?`現在の保存先：${cfg.sheetName}`:""; }
+function saveSettings(){ cfg.event=$("sEvent").value||"大会名未設定";cfg.date=$("sDate").value;cfg.mode=$("sMode").value;cfg.point=$("sPoint").value||"地点未設定";cfg.staff=$("sStaff").value;cfg.top=$("sTop").value;cfg.relayGap=Math.max(1,Math.min(60,Number($("sRelayGap").value)||1));cfg.endpoint=$("sEndpoint").value.trim();cfg.sheetId=$("sSheetId").value.trim();cfg.sheetName="";save();$("settingsPanel").hidden=true;render();processQueue(); }
+function clearRecords(){ if(!confirm("この端末の登録データを全て消去します。よろしいですか？"))return;records=[];sendQueue=[];save();render(); }
+function testDestination(){
+  const status=$("connectionStatus"); const endpoint=$("sEndpoint").value.trim(); const sheetId=$("sSheetId").value.trim();
+  if(!endpoint){status.textContent="❌ Google Apps Script URLを入力してください";return}
+  if(!sheetId){status.textContent="❌ 保存先スプレッドシートIDを入力してください";return}
+  status.textContent="接続確認中…";
+  const payload={action:"PING",sheetId:sheetId,event:$("sEvent").value||"接続確認",date:$("sDate").value||"",mode:$("sMode").value||"MARATHON",point:$("sPoint").value||"接続確認",staff:$("sStaff").value||"",time:now(),id:"PING_"+Date.now()};
+  const c=new AbortController(),timer=setTimeout(()=>c.abort(),15000);
+  fetch(endpoint,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),signal:c.signal}).then(()=>{clearTimeout(timer);cfg.sheetId=sheetId;cfg.sheetName="";status.textContent="✅ 接続要求を送信できました。保存後、テスト番号を1件登録してスプレッドシートへの記録を確認してください。";}).catch(()=>{clearTimeout(timer);status.textContent="❌ 接続確認できませんでした。URL・ID・通信状態を確認してください。";});
+}
+function deleteNumber(){
+  const input=$("deleteNumberInput"); if(!input)return;
+  const raw=input.value.trim(); const target=parseNumber(raw);
+  if(!target||target==="MURI"||target==="CANCEL"){alert(cfg.mode==="EKIDEN"?"削除する駅伝番号を 125-3 の形式で入力してください。":"削除するナンバーを1～99999で入力してください。");input.focus();return}
+  const i=records.findIndex(r=>!r.cancelled&&!r.invalidGap&&r.value===target);
+  if(i<0){$("status").textContent=`「${target}」は現在のアプリ内登録にありません`;input.select();return}
+  const r=records[i]; const lapText=r.mode==="RELAY"&&r.lap?`（${r.lap}周目）`:"";
+  if(!confirm(`「${target}」${lapText}を削除しますか？\n\n最も新しい登録1件だけを削除します。\nこの操作は元に戻せません。`))return;
+  r.cancelled=true;r.cancelledAt=now();r.cancelledBy="番号指定削除";sendQueue=sendQueue.filter(q=>q.id!==r.id);save();render();$("status").textContent=`「${target}」${lapText}を削除しました`;input.value="";input.focus();
 }
 
-$("voiceBtn").onclick=startRecognition;$("registerBtn").onclick=registerManual;$("muriBtn").onclick=()=>add("ムリ",false);$("numberInput").addEventListener("keydown",e=>{if(e.key==="Enter")registerManual()});$("settingsBtn").onclick=openSettings;$("closeSettings").onclick=doCloseSettings;$("saveSettings").onclick=doSaveSettings;$("testConnectionBtn")?.addEventListener("click",testConnection);$("manModeBtn")?.addEventListener("click",()=>{manMode=!manMode;save();render();$("status").textContent=manMode?"万台モードON：10,000～99,999は1桁ずつ読んでください。":"万台モードOFF：通常の番号読み上げに戻しました。"});$("clearRecordsBtn").onclick=()=>{if(confirm("登録されている番号データをすべて削除します。\nこの操作は元に戻せません。\n大会設定は残ります。\n\n本当に削除しますか？")){records=[];sendQueue=[];save();render();$("status").textContent="登録データを全消去しました"}};$("cancelLastBtn")?.addEventListener("click",cancelLast);$("deleteNumberBtn")?.addEventListener("click",deleteNumber);$("deleteNumberInput")?.addEventListener("keydown",e=>{if(e.key==="Enter")deleteNumber()});window.addEventListener("online",()=>{render();processQueue()});window.addEventListener("offline",render);setInterval(processQueue,15000);setInterval(()=>{if(cfg.top)updateCountdown()},1000);window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstall=e;$("installBtn").hidden=false});$("installBtn").onclick=async()=>{if(deferredInstall){deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;$("installBtn").hidden=true}};if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});load();
+$("voiceBtn").addEventListener("click",()=>listening?stopRecognition():startRecognition());
+$("registerBtn").addEventListener("click",registerManual);$("numberInput").addEventListener("keydown",e=>{if(e.key==="Enter")registerManual()});
+$("muriBtn").addEventListener("click",()=>add("ムリ",false,"ボタン"));$("cancelLastBtn").addEventListener("click",cancelLast);
+$("deleteNumberBtn").addEventListener("click",deleteNumber);$("deleteNumberInput").addEventListener("keydown",e=>{if(e.key==="Enter")deleteNumber()});
+$("manModeBtn").addEventListener("click",()=>{manMode=!manMode;save();render();});
+$("settingsBtn").addEventListener("click",()=>{fillSettings();$("settingsPanel").hidden=false});
+$("closeSettings").addEventListener("click",()=>$("settingsPanel").hidden=true);$("saveSettings").addEventListener("click",saveSettings);$("clearRecordsBtn").addEventListener("click",clearRecords);$("testConnectionBtn").addEventListener("click",testDestination);
+$("sMode").addEventListener("change",()=>{const rw=$("relayGapWrap");if(rw)rw.hidden=$("sMode").value!=="RELAY";});
+window.addEventListener("online",processQueue);setInterval(updateCountdown,1000);
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstall=e;$("installBtn").hidden=false});$("installBtn").addEventListener("click",async()=>{if(deferredInstall){deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;$("installBtn").hidden=true}});
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");load();
+
+window.deleteNumber=deleteNumber;
