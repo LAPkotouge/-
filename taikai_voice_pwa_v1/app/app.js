@@ -132,22 +132,35 @@ function openSettings(){$("sEvent").value=cfg.event;$("sDate").value=cfg.date;$(
 function doCloseSettings(){$("settingsPanel").hidden=true;}
 function doSaveSettings(){cfg={event:$("sEvent").value||"大会名未設定",date:$("sDate").value,mode:$("sMode").value,point:$("sPoint").value||"地点未設定",staff:$("sStaff").value,top:$("sTop").value,relayGap:Math.max(1,Math.min(60,Number($("sRelayGap").value)||1)),endpoint:$("sEndpoint").value.trim(),sheetId:$("sSheetId").value.trim(),sheetName:cfg.sheetName||""};save();render();doCloseSettings();}
 function countdownText(){if(!cfg.top)return"";const[h,m,s]=cfg.top.split(":").map(Number);if(!Number.isFinite(h)||!Number.isFinite(m))return"";const t=new Date();t.setHours(h,m,s||0,0);let d=t-Date.now(),past=d<0;d=Math.abs(d);const sec=Math.floor(d/1000);return past?`経過 ${Math.floor(sec/60)}:${String(sec%60).padStart(2,"0")}`:`あと ${Math.floor(sec/60)}:${String(sec%60).padStart(2,"0")}`;}
-function testConnection(){
+async function testConnection(){
   const endpoint=$("sEndpoint").value.trim();
   const sheetId=$("sSheetId").value.trim();
   const out=$("connectionStatus");
   if(!endpoint){out.textContent="Apps Script URLを入力してください";return;}
   if(!sheetId){out.textContent="スプレッドシートIDを入力してください";return;}
+  if(!navigator.onLine){out.textContent="❌ オフラインです。通信状態を確認してください";return;}
+
   out.textContent="接続確認中…";
-  const cb="taikaiPing_"+Date.now();
-  const script=document.createElement("script");
-  const timer=setTimeout(()=>{cleanup();out.textContent="❌ 接続確認できませんでした";},8000);
-  function cleanup(){clearTimeout(timer);delete window[cb];script.remove();}
-  window[cb]=res=>{cleanup();if(res&&res.ok){cfg.sheetId=sheetId;cfg.sheetName=res.name||"";save();render();out.textContent=`✅ 接続OK：${res.name||"スプレッドシート"}`;}else{out.textContent=`❌ ${res?.error||"接続できません"}`;}};
-  const sep=endpoint.includes("?")?"&":"?";
-  script.src=endpoint+sep+"action=PING&sheetId="+encodeURIComponent(sheetId)+"&callback="+encodeURIComponent(cb)+"&_="+Date.now();
-  script.onerror=()=>{cleanup();out.textContent="❌ 接続確認できませんでした";};
-  document.body.appendChild(script);
+  const c=new AbortController();
+  const timer=setTimeout(()=>c.abort(),15000);
+  try{
+    await fetch(endpoint,{
+      method:"POST",
+      mode:"no-cors",
+      headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body:JSON.stringify({action:"PING",sheetId:sheetId}),
+      signal:c.signal
+    });
+    clearTimeout(timer);
+    cfg.sheetId=sheetId;
+    cfg.sheetName="";
+    save();
+    render();
+    out.textContent="✅ 接続要求を送信できました。保存後、テスト番号を1件登録してスプレッドシートへの記録を確認してください。";
+  }catch(e){
+    clearTimeout(timer);
+    out.textContent="❌ 接続確認を送信できませんでした。通信状態またはApps Script URLを確認してください。";
+  }
 }
 
 $("voiceBtn").onclick=startRecognition;$("registerBtn").onclick=registerManual;$("muriBtn").onclick=()=>add("ムリ",false);$("numberInput").addEventListener("keydown",e=>{if(e.key==="Enter")registerManual()});$("settingsBtn").onclick=openSettings;$("closeSettings").onclick=doCloseSettings;$("saveSettings").onclick=doSaveSettings;$("testConnectionBtn")?.addEventListener("click",testConnection);$("manModeBtn")?.addEventListener("click",()=>{manMode=!manMode;save();render();$("status").textContent=manMode?"万台モードON：10,000～99,999は1桁ずつ読んでください。":"万台モードOFF：通常の番号読み上げに戻しました。"});$("clearRecordsBtn").onclick=()=>{if(confirm("登録されている番号データをすべて削除します。\nこの操作は元に戻せません。\n大会設定は残ります。\n\n本当に削除しますか？")){records=[];sendQueue=[];save();render();$("status").textContent="登録データを全消去しました"}};$("cancelLastBtn")?.addEventListener("click",cancelLast);$("deleteNumberBtn")?.addEventListener("click",deleteNumber);$("deleteNumberInput")?.addEventListener("keydown",e=>{if(e.key==="Enter")deleteNumber()});window.addEventListener("online",()=>{render();processQueue()});window.addEventListener("offline",render);setInterval(processQueue,15000);setInterval(()=>{if(cfg.top)updateCountdown()},1000);window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstall=e;$("installBtn").hidden=false});$("installBtn").onclick=async()=>{if(deferredInstall){deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;$("installBtn").hidden=true}};if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});load();
