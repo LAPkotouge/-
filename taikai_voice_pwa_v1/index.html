@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b57d0"><link rel="manifest" href="manifest.json"><link rel="stylesheet" href="style.css?v=20"><title>大会ナンバー受付</title></head>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b57d0"><link rel="manifest" href="manifest.json"><link rel="stylesheet" href="style.css?v=21"><title>大会ナンバー受付</title></head>
 <body><main class="wrap">
 <header class="appHeader"><div class="titleRow"><div id="event" class="eventTitle">大会名未設定</div><div id="eventDate" class="eventDate"></div></div><div class="infoBox"><div class="infoRow"><span id="staff">担当：未設定</span><span class="dotSep">・</span><span id="point">地点未設定</span><span class="dotSep">・</span><span id="connectionState" class="connected">● 接続中</span><span class="dotSep">・</span><span id="status" class="status">停止中</span></div><div id="destination" class="destination">保存先：標準スプレッドシート</div></div></header>
 <section class="panel mainPanel"><div class="timeBar"><div class="timeItem"><span>現在時刻</span><b id="currentTime">--:--:--</b></div><div class="timeDivider"></div><div class="timeItem"><span>TOPまでの時間</span><b id="countdown">未設定</b></div></div>
@@ -12,5 +12,31 @@
 <section class="stats"><div><b id="okCount">0</b><span>番号登録</span></div><div><b id="muriCount">0</b><span>ムリ</span></div><div><b id="totalCount">0</b><span>総人数</span></div></section>
 <section class="settings"><button id="settingsBtn" type="button">⚙ 大会・地点設定</button><button id="installBtn" type="button" hidden>📱 ホーム画面に追加</button></section>
 <div id="modeBadge" hidden>マラソン</div>
-<div id="settingsPanel" class="modal" hidden><div class="dialog"><h2>大会・地点設定</h2><label>大会名<input id="sEvent"></label><label>開催日<input id="sDate" type="date"></label><label>方式<select id="sMode"><option value="MARATHON">マラソン</option><option value="EKIDEN">駅伝</option><option value="RELAY">リレーマラソン</option></select></label><label>地点名<input id="sPoint" placeholder="フィニッシュ / 第1中継所 / 5km など"></label><label>担当者名<input id="sStaff"></label><label>TOP予想時刻<input id="sTop" placeholder="09:30:00"></label><label id="relayGapWrap" hidden>周回差（再読み取り無効時間・1～60分）<input id="sRelayGap" type="number" min="1" max="60" step="1" value="1"></label><label>保存先スプレッドシートID<input id="sSheetId" autocomplete="off" placeholder="URLの /d/ と /edit の間"></label><label>Google Apps Script URL<input id="sEndpoint" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec"></label><button type="button" id="testConnectionBtn" class="testBtn">🔗 保存先を接続確認</button><div id="connectionStatus" class="hint"></div><div class="dialogBtns"><button type="button" id="saveSettings">保存</button><button type="button" id="closeSettings">閉じる</button></div><button type="button" id="clearRecordsBtn" class="clearBtn">🗑 登録データを全消去</button><p class="small">保存先IDを変えるだけで大会ごとのスプレッドシートへ切り替えられます。</p></div></div></main>
-<script src="app/app.js?v=20"></script></body></html>
+<div id="settingsPanel" class="modal" hidden><div class="dialog"><h2>大会・地点設定</h2><label>大会名<input id="sEvent"></label><label>開催日<input id="sDate" type="date"></label><label>方式<select id="sMode"><option value="MARATHON">マラソン</option><option value="EKIDEN">駅伝</option><option value="RELAY">リレーマラソン</option></select></label><label>地点名<input id="sPoint" placeholder="フィニッシュ / 第1中継所 / 5km など"></label><label>担当者名<input id="sStaff"></label><label>TOP予想時刻<input id="sTop" placeholder="09:30:00"></label><label id="relayGapWrap" hidden>周回差（再読み取り無効時間・1～60分）<input id="sRelayGap" type="number" min="1" max="60" step="1" value="1"></label><label>保存先スプレッドシートID<input id="sSheetId" autocomplete="off" placeholder="URLの /d/ と /edit の間"></label><label>Google Apps Script URL<input id="sEndpoint" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec"></label><button type="button" id="testConnectionBtn" class="testBtn">🔗 保存先を接続確認</button><div id="connectionStatus" class="hint"></div><div class="dialogBtns"><button type="button" id="saveSettings">保存</button><button type="button" id="closeSettings">閉じる</button></div><div class="clearActions"><button type="button" id="clearRecordsBtn" class="clearBtn appClearBtn">アプリ内クリア</button><button type="button" id="clearPointSheetBtn" class="clearBtn sheetClearBtn">シート全消去</button></div><p class="small">左：この端末の登録データだけを消去　／　右：現在の地点シートの見出し以外を全消去</p><p class="small">保存先IDを変えるだけで大会ごとのスプレッドシートへ切り替えられます。</p></div></div></main>
+<script src="app/app.js?v=20"></script>
+<script>
+(function(){
+  const btn=document.getElementById('clearPointSheetBtn');
+  if(!btn)return;
+  btn.addEventListener('click',async function(){
+    const point=(document.getElementById('sPoint').value||'').trim();
+    const sheetId=(document.getElementById('sSheetId').value||'').trim();
+    const endpoint=(document.getElementById('sEndpoint').value||'').trim();
+    const status=document.getElementById('connectionStatus');
+    if(!point){alert('地点名を設定してください。');return;}
+    if(!sheetId){alert('保存先スプレッドシートIDを設定してください。');return;}
+    if(!endpoint){alert('Google Apps Script URLを設定してください。');return;}
+    if(!navigator.onLine){alert('オフラインのため実行できません。');return;}
+    if(!confirm('「'+point+'」シートの登録データをすべて削除します。\n\n1行目の見出しは残します。\n他の地点シートは削除しません。\nこの操作は元に戻せません。\n\n実行しますか？'))return;
+    if(!confirm('最終確認です。\n「'+point+'」シートのデータを本当に全消去しますか？'))return;
+    status.textContent='「'+point+'」シートへ全消去命令を送信中…';
+    btn.disabled=true;
+    try{
+      await fetch(endpoint,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'CLEAR_POINT',sheetId:sheetId,point:point,event:document.getElementById('sEvent').value||'',date:document.getElementById('sDate').value||'',staff:document.getElementById('sStaff').value||''})});
+      status.textContent='✅ 「'+point+'」シートへ全消去命令を送信しました。スプレッドシートで確認してください。';
+    }catch(e){
+      status.textContent='❌ シート全消去の送信に失敗しました。通信状態を確認してください。';
+    }finally{btn.disabled=false;}
+  });
+})();
+</script></body></html>
