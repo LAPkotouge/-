@@ -1,4 +1,4 @@
-const CACHE = "taikai-voice-v9";
+const CACHE = "taikai-voice-v10";
 
 self.addEventListener("install", event => {
   event.waitUntil(
