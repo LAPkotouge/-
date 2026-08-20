@@ -2,6 +2,27 @@
 // V30：送信安定化＋アプリ内データ再送信
 // =====================================================
 
+// アプリ内クリア：危険操作として黒×黄色の縞模様
+(function setupDangerClearStyle(){
+  const style=document.createElement('style');
+  style.textContent=`
+    .appClearBtn{
+      border:2px solid #111 !important;
+      color:#111 !important;
+      font-weight:900 !important;
+      text-shadow:0 1px 0 rgba(255,255,255,.8);
+      background:repeating-linear-gradient(
+        135deg,
+        #f4d000 0,
+        #f4d000 14px,
+        #111 14px,
+        #111 28px
+      ) !important;
+    }
+  `;
+  document.head.appendChild(style);
+})();
+
 // -----------------------------------------------------
 // 通常送信キューを安定化
 // ・5秒タイムアウトで途中停止しない
