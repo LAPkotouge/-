@@ -107,3 +107,104 @@ function clearRecords(){if(!confirm("この端末の登録データを全て消�
 function testDestination(){const status=$("connectionStatus"),endpoint=$("sEndpoint").value.trim(),sheetId=$("sSheetId").value.trim();if(!endpoint){status.textContent="❌ Google Apps Script URLを入力してください";return}if(!sheetId){status.textContent="❌ 保存先スプレッドシートIDを入力してください";return}status.textContent="接続確認中…";const payload={action:"PING",sheetId,event:$("sEvent").value||"接続確認",date:$("sDate").value||"",mode:$("sMode").value||"MARATHON",point:$("sPoint").value||"接続確認",staff:$("sStaff").value||"",time:now(),id:"PING_"+Date.now()};const c=new AbortController(),timer=setTimeout(()=>c.abort(),15000);fetch(endpoint,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),signal:c.signal}).then(()=>{clearTimeout(timer);cfg.sheetId=sheetId;cfg.sheetName="";status.textContent="✅ 接続要求を送信できました。保存後、テスト番号を1件登録して確認してください。";}).catch(()=>{clearTimeout(timer);status.textContent="❌ 接続確認できませんでした。URL・ID・通信状態を確認してください。";});}
 
 $("voiceBtn").addEventListener("click",()=>listening?stopRecognition():startRecognition());$("registerBtn").addEventListener("click",registerManual);$("numberInput").addEventListener("keydown",e=>{if(e.key==="Enter")registerManual()});$("muriBtn").addEventListener("click",()=>add("ムリ",false,"ボタン"));$("cancelLastBtn").addEventListener("click",cancelLast);$("deleteNumberBtn").addEventListener("click",deleteNumber);$("deleteNumberInput").addEventListener("keydown",e=>{if(e.key==="Enter")deleteNumber()});$("manModeBtn").addEventListener("click",()=>{manMode=!manMode;save();render();});$("settingsBtn").addEventListener("click",()=>{fillSettings();$("settingsPanel").hidden=false});$("closeSettings").addEventListener("click",()=>$("settingsPanel").hidden=true);$("saveSettings").addEventListener("click",saveSettings);$("clearRecordsBtn").addEventListener("click",clearRecords);$("testConnectionBtn").addEventListener("click",testDestination);$("sMode").addEventListener("change",()=>{const rw=$("relayGapWrap");if(rw)rw.hidden=$("sMode").value!=="RELAY";});window.addEventListener("online",()=>{render();processQueue();});window.addEventListener("offline",render);setInterval(refreshClock,500);window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstall=e;$("installBtn").hidden=false});$("installBtn").addEventListener("click",async()=>{if(deferredInstall){deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;$("installBtn").hidden=true}});if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");load();window.deleteNumber=deleteNumber;
+
+// =====================================================
+// V30：大会別記録スプレッドシート自動作成
+// =====================================================
+(function setupV30(){
+  const VERSION_TEXT="V＝３０";
+  const MASTER_ID_KEY="taikai_voice_shared_master_id_v1";
+
+  const style=document.createElement("style");
+  style.textContent=`
+    .eventDate::before{content:"${VERSION_TEXT}"!important}
+    .dialog h2::after{content:"${VERSION_TEXT}"!important}
+    .v30CreateBox{border:1px solid #7bb993;background:#f5fbf7;border-radius:11px;padding:11px;margin:4px 0 14px}
+    .v30CreateTitle{font-size:17px;font-weight:900;color:#176b36;margin-bottom:6px}
+    .v30CreateHint{font-size:11px;color:#667085;line-height:1.45;margin:4px 0 8px}
+    .v30CreateBtn{width:100%;min-height:46px;border:0;border-radius:9px;background:#176b36;color:#fff;font-weight:900;font-size:16px;padding:8px}
+    .v30CreateBtn:disabled{opacity:.55}
+    .v30CreateStatus{font-size:12px;color:#667085;margin-top:7px;line-height:1.45;overflow-wrap:anywhere}
+  `;
+  document.head.appendChild(style);
+
+  const sharedBox=document.getElementById("sharedMasterId")?.closest(".eventProfileBox");
+  if(!sharedBox)return;
+
+  const box=document.createElement("div");
+  box.className="v30CreateBox";
+  box.innerHTML=`
+    <div class="v30CreateTitle">新規大会作成</div>
+    <div class="v30CreateHint">大会名・開催日・方式を入力して実行すると、記録用スプレッドシートを自動作成し、保存先ID設定と共有大会マスタ登録まで行います。同じ「年＋大会名」が既にある場合は新規作成しません。</div>
+    <button type="button" id="createEventSpreadsheetV30" class="v30CreateBtn">新規大会＋記録シートを作成</button>
+    <div id="createEventStatusV30" class="v30CreateStatus"></div>
+  `;
+  sharedBox.parentNode.insertBefore(box,sharedBox);
+
+  function jsonpCreate(params){
+    return new Promise((resolve,reject)=>{
+      const endpoint=(document.getElementById("sEndpoint")?.value||cfg.endpoint||"").trim();
+      if(!endpoint){reject(new Error("Google Apps Script URLが未設定です"));return;}
+      const cb="createEventCb_"+Date.now()+"_"+Math.random().toString(36).slice(2,6);
+      const qs=new URLSearchParams({...params,callback:cb});
+      const script=document.createElement("script");
+      const timer=setTimeout(()=>{cleanup();reject(new Error("timeout"));},30000);
+      function cleanup(){clearTimeout(timer);try{delete window[cb];}catch{}script.remove();}
+      window[cb]=data=>{cleanup();resolve(data);};
+      script.onerror=()=>{cleanup();reject(new Error("network"));};
+      script.src=endpoint+(endpoint.includes("?")?"&":"?")+qs.toString();
+      document.body.appendChild(script);
+    });
+  }
+
+  async function createEventSpreadsheetV30(){
+    const btn=document.getElementById("createEventSpreadsheetV30");
+    const status=document.getElementById("createEventStatusV30");
+    const event=(document.getElementById("sEvent")?.value||"").trim();
+    const date=document.getElementById("sDate")?.value||"";
+    const mode=document.getElementById("sMode")?.value||"MARATHON";
+    const year=Number((date||"").slice(0,4))||Number(document.getElementById("profileYear")?.value)||new Date().getFullYear();
+    const masterId=(document.getElementById("sharedMasterId")?.value||localStorage.getItem(MASTER_ID_KEY)||"").trim();
+    const endpoint=(document.getElementById("sEndpoint")?.value||cfg.endpoint||"").trim();
+
+    if(!event){alert("大会名を入力してください。");return;}
+    if(!date){alert("開催日を入力してください。");return;}
+    if(!masterId){alert("共有マスタ スプレッドシートIDを入力してください。");return;}
+    if(!endpoint){alert("Google Apps Script URLを入力してください。");return;}
+    if(!navigator.onLine){alert("オフラインのため新規大会を作成できません。");return;}
+
+    const filename=`${year}_${event}_記録データ`;
+    if(!confirm(`${filename}\n\n記録用スプレッドシートを新規作成し、共有大会マスタへ登録します。\nよろしいですか？`))return;
+
+    btn.disabled=true;
+    status.textContent="新規大会を作成中… Googleドライブと共有大会マスタを確認しています。";
+    try{
+      const res=await jsonpCreate({
+        action:"CREATE_EVENT",
+        masterId,
+        year:String(year),
+        event,
+        date,
+        mode
+      });
+      if(!res||!res.ok)throw new Error(res&&res.error?res.error:"作成に失敗しました");
+      if(res.exists){
+        status.textContent=`⚠ ${year}｜${event} は既に共有大会マスタに登録されています。新しいスプレッドシートは作成していません。`;
+        if(res.sheetId)document.getElementById("sSheetId").value=res.sheetId;
+      }else{
+        document.getElementById("sSheetId").value=res.sheetId||"";
+        if(document.getElementById("profileYear"))document.getElementById("profileYear").value=year;
+        if(document.getElementById("sharedYear"))document.getElementById("sharedYear").value=year;
+        localStorage.setItem(MASTER_ID_KEY,masterId);
+        status.textContent=`✅ ${res.sheetName||filename} を作成しました。保存先IDを自動設定し、共有大会マスタへ登録しました。下の「保存」を押してこの端末の大会設定を確定してください。`;
+      }
+      setTimeout(()=>document.getElementById("refreshSharedMaster")?.click(),300);
+    }catch(e){
+      status.textContent=`❌ 新規大会を作成できませんでした：${e.message||e}。Apps ScriptをV30対応版へ更新・再デプロイしたか確認してください。`;
+    }finally{
+      btn.disabled=false;
+    }
+  }
+
+  document.getElementById("createEventSpreadsheetV30").addEventListener("click",createEventSpreadsheetV30);
+})();
