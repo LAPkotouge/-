@@ -1,4 +1,4 @@
-const CACHE = "taikai-voice-v30-version2";
+const CACHE = "taikai-voice-v30-version3";
 
 self.addEventListener("install", event => {
   event.waitUntil(
@@ -28,7 +28,7 @@ self.addEventListener("activate", event => {
 self.addEventListener("fetch", event => {
   const url = new URL(event.request.url);
 
-  // V30復旧機能：既存app.jsの末尾にrestore.jsを結合して実行する
+  // V30追加機能：既存app.jsの末尾にrestore.jsを結合して実行する
   if (url.pathname.endsWith("/app/app.js")) {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE);
