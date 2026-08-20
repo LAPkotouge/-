@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b57d0"><link rel="manifest" href="manifest.json"><link rel="stylesheet" href="style.css?v=25"><title>大会ナンバー受付</title></head>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b57d0"><link rel="manifest" href="manifest.json"><link rel="stylesheet" href="style.css?v=26"><title>大会ナンバー受付</title></head>
 <body><main class="wrap">
 <header class="appHeader"><div class="titleRow"><div id="event" class="eventTitle">大会名未設定</div><div id="eventDate" class="eventDate"></div></div><div class="infoBox"><div class="infoRow"><span id="staff">担当：未設定</span><span class="dotSep">・</span><span id="point">地点未設定</span><span class="dotSep">・</span><span id="connectionState" class="connected">● 接続中</span><span class="dotSep">・</span><span id="status" class="status">停止中</span></div><div id="destination" class="destination">保存先：標準スプレッドシート</div></div></header>
 <section class="panel mainPanel"><div class="timeBar"><div class="timeItem"><span>現在時刻</span><b id="currentTime">--:--:--</b></div><div class="timeDivider"></div><div class="timeItem"><span>TOPまでの時間</span><b id="countdown">未設定</b></div></div>
@@ -12,41 +12,115 @@
 <section class="stats"><div><b id="okCount">0</b><span>番号登録</span></div><div><b id="muriCount">0</b><span>ムリ</span></div><div><b id="totalCount">0</b><span>総人数</span></div></section>
 <section class="settings"><button id="settingsBtn" type="button">⚙ 大会・地点設定</button><button id="installBtn" type="button" hidden>📱 ホーム画面に追加</button></section>
 <div id="modeBadge" hidden>マラソン</div>
-<div id="settingsPanel" class="modal" hidden><div class="dialog"><h2>大会・地点設定</h2><label>大会名<input id="sEvent"></label><label>開催日<input id="sDate" type="date"></label><label>方式<select id="sMode"><option value="MARATHON">マラソン</option><option value="EKIDEN">駅伝</option><option value="RELAY">リレーマラソン</option></select></label><label>地点名<input id="sPoint" placeholder="フィニッシュ / 第1中継所 / 5km など"></label><label>担当者名<input id="sStaff"></label><label>TOP予想時刻<input id="sTop" placeholder="09:30:00"></label><label id="relayGapWrap" hidden>周回差（再読み取り無効時間・1～60分）<input id="sRelayGap" type="number" min="1" max="60" step="1" value="1"></label><label>保存先スプレッドシートID<input id="sSheetId" autocomplete="off" placeholder="URLの /d/ と /edit の間"></label><label>Google Apps Script URL<input id="sEndpoint" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec"></label><button type="button" id="testConnectionBtn" class="testBtn">🔗 保存先を接続確認</button><div id="connectionStatus" class="hint"></div><div class="dialogBtns"><button type="button" id="saveSettings">保存</button><button type="button" id="closeSettings">閉じる</button></div><div class="clearActions"><button type="button" id="clearRecordsBtn" class="clearBtn appClearBtn">アプリ内クリア</button><button type="button" id="clearPointSheetBtn" class="clearBtn sheetClearBtn">シート全消去</button></div><p class="small">左：この端末の登録データだけを消去　／　右：現在の地点シートの見出し以外を全消去</p><p class="small">保存先IDを変えるだけで大会ごとのスプレッドシートへ切り替えられます。</p></div></div></main>
-<script src="app/app.js?v=22"></script>
+<div id="settingsPanel" class="modal" hidden><div class="dialog"><h2>大会・地点設定</h2>
+<div class="eventProfileBox"><div class="profileTitle">大会設定管理</div><label>保存済み大会<select id="eventProfileSelect"><option value="">保存済み大会を選択</option></select></label><div class="profileYearRow"><label>年度<input id="profileYear" type="number" min="2000" max="2100" step="1" placeholder="2026"></label><div class="profileHint">大会共通設定だけを保存します。地点名・担当者名はこのスマホ側に残ります。</div></div><div class="profileBtns"><button type="button" id="saveEventProfile">大会設定を保存</button><button type="button" id="loadEventProfile">呼び出し</button><button type="button" id="deleteEventProfile">削除</button></div><div id="profileStatus" class="hint"></div></div>
+<label>大会名<input id="sEvent"></label><label>開催日<input id="sDate" type="date"></label><label>方式<select id="sMode"><option value="MARATHON">マラソン</option><option value="EKIDEN">駅伝</option><option value="RELAY">リレーマラソン</option></select></label><label>地点名<input id="sPoint" placeholder="フィニッシュ / 第1中継所 / 5km など"></label><label>担当者名<input id="sStaff"></label><label>TOP予想時刻<input id="sTop" placeholder="09:30:00"></label><label id="relayGapWrap" hidden>周回差（再読み取り無効時間・1～60分）<input id="sRelayGap" type="number" min="1" max="60" step="1" value="1"></label><label>保存先スプレッドシートID<input id="sSheetId" autocomplete="off" placeholder="URLの /d/ と /edit の間"></label><label>Google Apps Script URL<input id="sEndpoint" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec"></label><button type="button" id="testConnectionBtn" class="testBtn">🔗 保存先を接続確認</button><div id="connectionStatus" class="hint"></div><div class="dialogBtns"><button type="button" id="saveSettings">保存</button><button type="button" id="closeSettings">閉じる</button></div><div class="clearActions"><button type="button" id="clearRecordsBtn" class="clearBtn appClearBtn">アプリ内クリア</button><button type="button" id="clearPointSheetBtn" class="clearBtn sheetClearBtn">シート全消去</button></div><p class="small">左：この端末の登録データだけを消去　／　右：現在の地点シートの見出し以外を全消去</p><p class="small">保存先IDを変えるだけで大会ごとのスプレッドシートへ切り替えられます。</p></div></div></main>
+<script src="app/app.js?v=26"></script>
 <script>
 (function(){
-  const btn=document.getElementById('clearPointSheetBtn');
+  const PROFILE_KEY='taikai_voice_event_profiles_v1';
+  const byId=id=>document.getElementById(id);
+
+  function readProfiles(){
+    try{const v=JSON.parse(localStorage.getItem(PROFILE_KEY)||'[]');return Array.isArray(v)?v:[];}catch{return [];}
+  }
+  function writeProfiles(list){localStorage.setItem(PROFILE_KEY,JSON.stringify(list));}
+  function defaultYear(){
+    const d=(byId('sDate')&&byId('sDate').value)||'';
+    const y=Number(d.slice(0,4));
+    return y||new Date().getFullYear();
+  }
+  function refreshProfiles(selectedId=''){
+    const sel=byId('eventProfileSelect');if(!sel)return;
+    const list=readProfiles().sort((a,b)=>(Number(b.year)||0)-(Number(a.year)||0)||String(a.event||'').localeCompare(String(b.event||''),'ja'));
+    sel.innerHTML='<option value="">保存済み大会を選択</option>'+list.map(p=>`<option value="${String(p.id).replace(/"/g,'&quot;')}">${p.year||''}｜${String(p.event||'大会名未設定').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</option>`).join('');
+    if(selectedId)sel.value=selectedId;
+    const py=byId('profileYear');if(py&&!py.value)py.value=defaultYear();
+  }
+  function currentProfileFromForm(){
+    return {
+      id:'',
+      year:Number(byId('profileYear').value)||defaultYear(),
+      event:(byId('sEvent').value||'').trim(),
+      date:byId('sDate').value||'',
+      mode:byId('sMode').value||'MARATHON',
+      top:(byId('sTop').value||'').trim(),
+      relayGap:Math.max(1,Math.min(60,Number(byId('sRelayGap').value)||1)),
+      sheetId:(byId('sSheetId').value||'').trim(),
+      endpoint:(byId('sEndpoint').value||'').trim(),
+      updatedAt:Date.now()
+    };
+  }
+  function saveEventProfile(){
+    const p=currentProfileFromForm();
+    const st=byId('profileStatus');
+    if(!p.event){alert('大会名を入力してください。');return;}
+    if(!p.sheetId){alert('保存先スプレッドシートIDを入力してください。');return;}
+    let list=readProfiles();
+    const existing=list.find(x=>Number(x.year)===Number(p.year)&&String(x.event||'').trim()===p.event);
+    if(existing){
+      if(!confirm(`${p.year}｜${p.event}\n\n同じ年度・大会名の設定があります。上書きしますか？`))return;
+      p.id=existing.id;
+      list=list.map(x=>x.id===existing.id?p:x);
+    }else{
+      p.id='EV_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+      list.push(p);
+    }
+    writeProfiles(list);refreshProfiles(p.id);
+    st.textContent=`✅ ${p.year}｜${p.event} を保存しました`;
+  }
+  function loadEventProfile(){
+    const id=byId('eventProfileSelect').value;const st=byId('profileStatus');
+    if(!id){alert('保存済み大会を選択してください。');return;}
+    const p=readProfiles().find(x=>x.id===id);if(!p){refreshProfiles();return;}
+    const activeCount=(typeof records!=='undefined'&&Array.isArray(records))?records.filter(r=>!r.cancelled).length:0;
+    const changing=(byId('sEvent').value||'').trim()!==String(p.event||'').trim()||(byId('sSheetId').value||'').trim()!==String(p.sheetId||'').trim();
+    if(activeCount>0&&changing){
+      if(!confirm(`現在このスマホに受付データが ${activeCount}件 残っています。\n\n大会設定を「${p.event}」へ切り替えますか？\n受付履歴は自動では消去しません。`))return;
+    }
+    const point=byId('sPoint').value,staff=byId('sStaff').value;
+    byId('profileYear').value=p.year||defaultYear();
+    byId('sEvent').value=p.event||'';byId('sDate').value=p.date||'';byId('sMode').value=p.mode||'MARATHON';byId('sTop').value=p.top||'';byId('sRelayGap').value=p.relayGap||1;byId('sSheetId').value=p.sheetId||'';byId('sEndpoint').value=p.endpoint||'';
+    byId('sPoint').value=point;byId('sStaff').value=staff;
+    const rw=byId('relayGapWrap');if(rw)rw.hidden=byId('sMode').value!=='RELAY';
+    st.textContent=`✅ ${p.year}｜${p.event} を呼び出しました。地点・担当者は変更していません。下の「保存」で確定してください。`;
+  }
+  function deleteEventProfile(){
+    const id=byId('eventProfileSelect').value;if(!id){alert('削除する保存済み大会を選択してください。');return;}
+    const list=readProfiles();const p=list.find(x=>x.id===id);if(!p)return;
+    if(!confirm(`${p.year}｜${p.event}\n\n保存済みの大会設定だけを削除します。\nスプレッドシートや受付データは削除しません。\nよろしいですか？`))return;
+    writeProfiles(list.filter(x=>x.id!==id));refreshProfiles();byId('profileStatus').textContent='保存済み大会設定を削除しました';
+  }
+
+  const settingsBtn=byId('settingsBtn');
+  if(settingsBtn)settingsBtn.addEventListener('click',()=>setTimeout(()=>{refreshProfiles();const py=byId('profileYear');if(py)py.value=defaultYear();},0));
+  if(byId('sDate'))byId('sDate').addEventListener('change',()=>{const py=byId('profileYear');if(py&&byId('sDate').value)py.value=Number(byId('sDate').value.slice(0,4))||py.value;});
+  byId('saveEventProfile').addEventListener('click',saveEventProfile);
+  byId('loadEventProfile').addEventListener('click',loadEventProfile);
+  byId('deleteEventProfile').addEventListener('click',deleteEventProfile);
+  refreshProfiles();
+
+  const btn=byId('clearPointSheetBtn');
   if(btn){
     btn.addEventListener('click',async function(){
-      const point=(document.getElementById('sPoint').value||'').trim();
-      const sheetId=(document.getElementById('sSheetId').value||'').trim();
-      const endpoint=(document.getElementById('sEndpoint').value||'').trim();
-      const status=document.getElementById('connectionStatus');
+      const point=(byId('sPoint').value||'').trim();
+      const sheetId=(byId('sSheetId').value||'').trim();
+      const endpoint=(byId('sEndpoint').value||'').trim();
+      const status=byId('connectionStatus');
       if(!point){alert('地点名を設定してください。');return;}
       if(!sheetId){alert('保存先スプレッドシートIDを設定してください。');return;}
       if(!endpoint){alert('Google Apps Script URLを設定してください。');return;}
       if(!navigator.onLine){alert('オフラインのため実行できません。');return;}
       if(!confirm('「'+point+'」シートの登録データをすべて削除します。\n\n1行目の見出しは残します。\n他の地点シートは削除しません。\nこの操作は元に戻せません。\n\n実行しますか？'))return;
       if(!confirm('最終確認です。\n「'+point+'」シートのデータを本当に全消去しますか？'))return;
-      status.textContent='「'+point+'」シートへ全消去命令を送信中…';
-      btn.disabled=true;
-      try{
-        await fetch(endpoint,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'CLEAR_POINT',sheetId:sheetId,point:point,event:document.getElementById('sEvent').value||'',date:document.getElementById('sDate').value||'',staff:document.getElementById('sStaff').value||''})});
-        status.textContent='✅ 「'+point+'」シートへ全消去命令を送信しました。スプレッドシートで確認してください。';
-      }catch(e){
-        status.textContent='❌ シート全消去の送信に失敗しました。通信状態を確認してください。';
-      }finally{btn.disabled=false;}
+      status.textContent='「'+point+'」シートへ全消去命令を送信中…';btn.disabled=true;
+      try{await fetch(endpoint,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'CLEAR_POINT',sheetId:sheetId,point:point,event:byId('sEvent').value||'',date:byId('sDate').value||'',staff:byId('sStaff').value||''})});status.textContent='✅ 「'+point+'」シートへ全消去命令を送信しました。スプレッドシートで確認してください。';}
+      catch(e){status.textContent='❌ シート全消去の送信に失敗しました。通信状態を確認してください。';}
+      finally{btn.disabled=false;}
     });
   }
 
-  function updateCountdownColor(){
-    const el=document.getElementById('countdown');
-    if(!el)return;
-    const text=(el.textContent||'').trim();
-    el.classList.toggle('countdownBefore',text.startsWith('-'));
-  }
-  setInterval(updateCountdownColor,250);
-  setTimeout(updateCountdownColor,50);
+  function updateCountdownColor(){const el=byId('countdown');if(!el)return;const text=(el.textContent||'').trim();el.classList.toggle('countdownBefore',text.startsWith('-'));}
+  setInterval(updateCountdownColor,250);setTimeout(updateCountdownColor,50);
 })();
 </script></body></html>
