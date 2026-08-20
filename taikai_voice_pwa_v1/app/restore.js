@@ -2,15 +2,21 @@
 // V30：送信安定化＋アプリ内データ再送信
 // =====================================================
 
-// アプリ内クリア：危険操作として黒×黄色の縞模様
+// 危険操作ボタンの視認性を強化
 (function setupDangerClearStyle(){
   const style=document.createElement('style');
   style.textContent=`
     .appClearBtn{
       border:2px solid #111 !important;
-      color:#111 !important;
+      color:#fff !important;
       font-weight:900 !important;
-      text-shadow:0 1px 0 rgba(255,255,255,.8);
+      letter-spacing:.03em;
+      text-shadow:
+        -1px -1px 0 #000,
+         1px -1px 0 #000,
+        -1px  1px 0 #000,
+         1px  1px 0 #000,
+         0    2px 2px rgba(0,0,0,.9) !important;
       background:repeating-linear-gradient(
         135deg,
         #f4d000 0,
@@ -19,6 +25,15 @@
         #111 28px
       ) !important;
     }
+    .sheetClearBtn{
+      border:2px solid #a91515 !important;
+      background:#d71920 !important;
+      color:#fff !important;
+      font-weight:900 !important;
+      letter-spacing:.03em;
+      text-shadow:0 1px 2px rgba(0,0,0,.45) !important;
+    }
+    .sheetClearBtn:disabled{opacity:.55}
   `;
   document.head.appendChild(style);
 })();
@@ -47,15 +62,11 @@ processQueue = async function(){
           body:JSON.stringify(payload)
         });
 
-        // 送信要求をブラウザが正常に受理したらキューから外す
         sendQueue.shift();
         save();
         render();
-
-        // 連続送信時のApps Script負荷を少し緩和
         await new Promise(resolve=>setTimeout(resolve,120));
       }catch(err){
-        // 通信失敗時は先頭データを残したまま次回再試行
         break;
       }
     }
@@ -64,7 +75,6 @@ processQueue = async function(){
   }
 };
 
-// 未送信データが残った場合は自動再試行
 setInterval(()=>{
   if(navigator.onLine && sendQueue.length) processQueue();
 },3000);
@@ -76,7 +86,6 @@ window.addEventListener('focus',()=>{
 document.addEventListener('visibilitychange',()=>{
   if(!document.hidden && navigator.onLine && sendQueue.length) processQueue();
 });
-
 
 // =====================================================
 // V30：アプリ内データを現在の地点シートへ再送信
