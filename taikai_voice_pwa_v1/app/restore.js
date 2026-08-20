@@ -1,4 +1,63 @@
 // =====================================================
+// V30：送信安定化＋アプリ内データ再送信
+// =====================================================
+
+// -----------------------------------------------------
+// 通常送信キューを安定化
+// ・5秒タイムアウトで途中停止しない
+// ・未送信が残っていれば定期的に再試行
+// ・同一レコードIDの重複防止はApps Script側で行う
+// -----------------------------------------------------
+processQueue = async function(){
+  if(isSending || !sendQueue.length || !cfg.endpoint || !navigator.onLine) return;
+
+  isSending = true;
+
+  try{
+    while(sendQueue.length && navigator.onLine){
+      const item = sendQueue[0];
+      const payload = {...item, sheetId:item.sheetId || cfg.sheetId || ""};
+
+      try{
+        await fetch(cfg.endpoint,{
+          method:"POST",
+          mode:"no-cors",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify(payload)
+        });
+
+        // 送信要求をブラウザが正常に受理したらキューから外す
+        sendQueue.shift();
+        save();
+        render();
+
+        // 連続送信時のApps Script負荷を少し緩和
+        await new Promise(resolve=>setTimeout(resolve,120));
+      }catch(err){
+        // 通信失敗時は先頭データを残したまま次回再試行
+        break;
+      }
+    }
+  }finally{
+    isSending = false;
+  }
+};
+
+// 未送信データが残った場合は自動再試行
+setInterval(()=>{
+  if(navigator.onLine && sendQueue.length) processQueue();
+},3000);
+
+window.addEventListener('focus',()=>{
+  if(navigator.onLine && sendQueue.length) processQueue();
+});
+
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden && navigator.onLine && sendQueue.length) processQueue();
+});
+
+
+// =====================================================
 // V30：アプリ内データを現在の地点シートへ再送信
 // 誤って「シート全消去」した場合の復旧用
 // =====================================================
@@ -14,7 +73,7 @@
     </button>
     <div id="resendLocalStatusV30" class="hint"></div>
     <p class="small" style="margin-top:5px;">
-      誤って現在地点のシートを全消去した場合の復旧用です。シートが空であることを確認してから実行してください。
+      誤って現在地点のシートを全消去した場合の復旧用です。Apps Script V30安定化版では同じ記録IDは二重登録しません。
     </p>`;
   clearActions.insertAdjacentElement('afterend',wrap);
 
@@ -60,7 +119,7 @@
     }
 
     const ok1=confirm(
-      `【復旧用 再送信】\n\n大会：${event}\n開催日：${date||'未設定'}\n地点：${point}\n対象：${items.length}件\n\n現在の地点シートが空であることを確認してください。\nシートにデータが残っている状態で実行すると重複登録になります。\n\n再送信しますか？`
+      `【復旧用 再送信】\n\n大会：${event}\n開催日：${date||'未設定'}\n地点：${point}\n対象：${items.length}件\n\nアプリ内データを現在の地点シートへ再送信します。\nApps Script V30安定化版では、同じ記録IDが既に存在する行は追加しません。\n\n実行しますか？`
     );
     if(!ok1) return;
 
@@ -93,24 +152,21 @@
           recovery:true
         };
 
-        const controller=new AbortController();
-        const timer=setTimeout(()=>controller.abort(),10000);
         await fetch(endpoint,{
           method:'POST',
           mode:'no-cors',
           headers:{'Content-Type':'application/json'},
-          body:JSON.stringify(payload),
-          signal:controller.signal
+          body:JSON.stringify(payload)
         });
-        clearTimeout(timer);
+
         sent++;
         status.textContent=`再送信中… ${sent} / ${items.length}件`;
-        await new Promise(resolve=>setTimeout(resolve,80));
+        await new Promise(resolve=>setTimeout(resolve,120));
       }
 
-      status.textContent=`✅ ${sent}件を再送信しました。スプレッドシートの「${point}」シートで件数とNo.を確認してください。アプリ内データは削除していません。`;
+      status.textContent=`✅ ${sent}件の再送信要求を完了しました。スプレッドシートの「${point}」シートで件数とNo.を確認してください。アプリ内データは削除していません。`;
     }catch(err){
-      status.textContent=`⚠ ${sent}件まで送信しましたが途中で停止しました。通信状態を確認してください。再実行すると重複する可能性があるため、先にシート内容を確認してください。`;
+      status.textContent=`⚠ ${sent}件まで送信しましたが途中で停止しました。通信状態を確認して、もう一度実行してください。同じ記録IDはApps Script側で重複登録を防止します。`;
     }finally{
       btn.disabled=false;
     }
