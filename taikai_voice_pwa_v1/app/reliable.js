@@ -30,6 +30,7 @@
         captureTs:String(item.captureTs||item.ts||''),
         recognizedTs:String(item.recognizedTs||''),
         recognitionDelayMs:String(item.recognitionDelayMs||''),
+        confidence:String(item.confidence||''),
         recovery:item.recovery?'1':'0'
       });
 
