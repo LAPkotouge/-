@@ -27,6 +27,9 @@
         point:String(item.point||cfg.point||''),
         staff:String(item.staff||cfg.staff||''),
         time:String(item.time||''),
+        captureTs:String(item.captureTs||item.ts||''),
+        recognizedTs:String(item.recognizedTs||''),
+        recognitionDelayMs:String(item.recognitionDelayMs||''),
         recovery:item.recovery?'1':'0'
       });
 
