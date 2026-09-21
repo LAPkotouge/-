@@ -171,6 +171,16 @@ function startRaceReception(){
   setRaceLiveMode(true);if(!listening)startRecognition();
 }
 
+
+function renderLiveCounters(){
+  const active=records.filter(r=>!r.cancelled&&!r.invalidGap);
+  const muri=active.filter(r=>!r.recognized||r.value==="ムリ").length;
+  const bib=active.length-muri;
+  const set=(id,v)=>{const e=$(id);if(e)e.textContent=String(v);};
+  set("v31CountBib",bib);set("v31CountMuri",muri);set("v31CountTotal",active.length);set("v31CountQueue",sendQueue.length);
+  const q=$("v31CountQueue");if(q&&q.parentElement)q.parentElement.classList.toggle("queueWarn",sendQueue.length>0);
+}
+
 function renderFieldAlert(){
   const box=$("v31FieldAlert"),main=$("v31FieldAlertMain"),sub=$("v31FieldAlertSub");if(!box||!main||!sub)return;
   const q=sendQueue.length;
@@ -193,7 +203,7 @@ function render(){
   const pb=$("packModeBtn");if(pb){pb.textContent=packMode?"集団モード ON":"集団モード OFF";pb.classList.toggle("on",packMode);}
   const ph=$("packModeHint");if(ph)ph.textContent=packMode?"連続番号をまとめて読み上げ可":"通常受付";
   const b=$("manModeBtn"); if(b){b.hidden=cfg.mode==="EKIDEN";b.innerHTML=`<span>万台</span><span>モード</span>`;b.style.background=manMode?"#0b57d0":"#fff";b.style.color=manMode?"#fff":"#c64b14";b.title=manMode?"万台番号モード ON":"万台番号モード OFF";}
-  const mh=$("manModeHint");if(mh)mh.hidden=cfg.mode==="EKIDEN"; const rw=$("relayGapWrap");if(rw)rw.hidden=cfg.mode!=="RELAY"; renderFieldAlert(); renderFieldLock(); renderStartFlow(); renderPackCountControls();
+  const mh=$("manModeHint");if(mh)mh.hidden=cfg.mode==="EKIDEN"; const rw=$("relayGapWrap");if(rw)rw.hidden=cfg.mode!=="RELAY"; renderFieldAlert(); renderFieldLock(); renderStartFlow(); renderPackCountControls(); renderLiveCounters();
 }
 function refreshClock(){ if($("currentTime"))$("currentTime").textContent=now(); if($("countdown"))$("countdown").textContent=topRemain(); }
 
