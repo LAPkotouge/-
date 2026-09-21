@@ -18,6 +18,8 @@ let fieldLock = false;
 let micTestPassed = false;
 let raceLiveMode = false;
 let packExpectedCount = 0;
+let pendingGapCount = 0;
+let pendingGapCaptureTs = 0;
 
 function load(){
   try{ Object.assign(cfg, JSON.parse(localStorage.getItem(KEY_CFG)||"{}")); }catch{}
@@ -261,10 +263,26 @@ function renderPackCountControls(){
   const row=$("v31PackCountRow");if(row)row.hidden=!packMode;
   setPackExpectedCount(packExpectedCount);
 }
-function warnPackCountMismatch(expected,actual,values){
+
+function showGapFill(count,captureTs){
+  pendingGapCount=Math.max(0,Number(count)||0);pendingGapCaptureTs=Number(captureTs)||Date.now();
+  const box=$("v31GapFill"),txt=$("v31GapFillText");if(!box||!txt)return;
+  box.hidden=pendingGapCount<1;txt.textContent=`人数抜け：${pendingGapCount}人`;
+}
+function clearGapFill(){pendingGapCount=0;pendingGapCaptureTs=0;const b=$("v31GapFill");if(b)b.hidden=true;}
+function fillGapWithMuri(){
+  if(pendingGapCount<1)return;
+  const n=pendingGapCount,base=pendingGapCaptureTs||Date.now();
+  for(let i=0;i<n;i++)add("ムリ",false,"集団人数抜け補完",base+i*250,0);
+  $("status").textContent=`人数抜け ${n}人を「ムリ」で補完しました`;
+  clearGapFill();
+}
+
+function warnPackCountMismatch(expected,actual,values,captureTs){
   if(!expected)return;
   const shortage=expected>=5?actual<5:actual<expected;
   if(!shortage)return;
+  const missing=expected>=5?Math.max(1,5-actual):Math.max(0,expected-actual);showGapFill(missing,captureTs);
   const box=$("v31Flash"),no=$("v31FlashNo"),meta=$("v31FlashMeta");if(box&&no&&meta){
     clearTimeout(flashTimer);box.className="v31Flash show warn";
     no.style.fontSize="min(20vw,105px)";no.textContent=values.join(" → ")||"—";
@@ -289,7 +307,7 @@ function addPack(values,rawSpeech,captureTs,confidence=0){
   const base=Number(captureTs)||Date.now();
   unique.forEach((v,i)=>add(v,true,rawSpeech,base+i*250,confidence));
   flashPackAccepted(unique,confidence);
-  warnPackCountMismatch(packExpectedCount,unique.length,unique);
+  warnPackCountMismatch(packExpectedCount,unique.length,unique,base);
   packExpectedCount=0;renderPackCountControls();
   $("status").textContent=`集団受付：${unique.length}人（${unique.join("・")}）`;
   return true;
@@ -297,7 +315,7 @@ function addPack(values,rawSpeech,captureTs,confidence=0){
 function startRecognition(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){alert("このブラウザは音声認識に対応していません。Chromeを使用してください。");return}recognition=new SR();recognition.lang="ja-JP";recognition.interimResults=false;recognition.continuous=false;recognition.onaudiostart=()=>{speechCandidateTs=Date.now();};
 recognition.onspeechstart=()=>{recognition._speechStartTs=Date.now();};
 recognition.onresult=e=>{const alt=e.results[0][0];const confidence=Number(alt.confidence)||0;const captureTs=recognition._speechStartTs||speechCandidateTs||Date.now();recognition._speechStartTs=0;speechCandidateTs=0;lastRecognitionConfidence=confidence;lastRecognitionDelayMs=Math.max(0,Date.now()-captureTs);const t=alt.transcript;showRecognitionRaw(t);
-if(packMode){const pack=parsePackNumbers(t);if(pack.length>=2){addPack(pack,t,captureTs,confidence);return;}if(packExpectedCount>=2&&pack.length===1){add(pack[0],true,t,captureTs,confidence);warnPackCountMismatch(packExpectedCount,1,pack);packExpectedCount=0;renderPackCountControls();return;}}
+if(packMode){const pack=parsePackNumbers(t);if(pack.length>=2){addPack(pack,t,captureTs,confidence);return;}if(packExpectedCount>=2&&pack.length===1){add(pack[0],true,t,captureTs,confidence);warnPackCountMismatch(packExpectedCount,1,pack,captureTs);packExpectedCount=0;renderPackCountControls();return;}}
 const v=parseNumber(t);if(v==="CANCEL")cancelLast();else if(v==="MURI")add("ムリ",false,t,captureTs,confidence);else if(v)add(v,true,t,captureTs,confidence);else $("status").textContent=`認識できません：「${t}」`;};recognition.onerror=e=>{speechCandidateTs=0;if(e.error!=="aborted")$("status").textContent="音声認識エラー："+e.error;};recognition.onend=()=>{if(listening){clearTimeout(restartTimer);restartTimer=setTimeout(()=>{try{recognition.start()}catch{}},180)}};listening=true;render();try{recognition.start()}catch{}}
 function stopRecognition(){listening=false;clearTimeout(restartTimer);try{recognition&&recognition.abort()}catch{}render()}
 function fillSettings(){$("sEvent").value=cfg.event==="大会名未設定"?"":cfg.event;$("sDate").value=cfg.date;$("sMode").value=cfg.mode;$("sPoint").value=cfg.point==="地点未設定"?"":cfg.point;$("sStaff").value=cfg.staff;$("sTop").value=cfg.top;$("sRelayGap").value=cfg.relayGap;$("sEndpoint").value=cfg.endpoint;$("sSheetId").value=cfg.sheetId||"";const rw=$("relayGapWrap");if(rw)rw.hidden=cfg.mode!=="RELAY";const cs=$("connectionStatus");if(cs)cs.textContent=cfg.sheetName?`現在の保存先：${cfg.sheetName}`:"";}
@@ -312,6 +330,8 @@ $("v31MicTestBtn")?.addEventListener("click",runMicTest);
 $("v31FieldLockBtn")?.addEventListener("click",()=>{toggleFieldLock();renderStartFlow();});
 $("v31StartBtn")?.addEventListener("click",startRaceReception);
 $("v31QuickUndoBtn")?.addEventListener("click",quickUndoLatest);
+$("v31GapFillBtn")?.addEventListener("click",fillGapWithMuri);
+$("v31GapDismissBtn")?.addEventListener("click",()=>{clearGapFill();$("status").textContent="人数抜け補完を見送りました";});
 $("v31ExitRaceBtn")?.addEventListener("click",()=>{if(!confirm("本番モードを終了しますか？\n受付データは消えません。"))return;stopRecognition();setRaceLiveMode(false);});
 window.addEventListener("online",renderStartFlow);window.addEventListener("offline",renderStartFlow);$("registerBtn").addEventListener("click",registerManual);$("numberInput").addEventListener("keydown",e=>{if(e.key==="Enter")registerManual()});$("muriBtn").addEventListener("click",()=>add("ムリ",false,"ボタン"));$("cancelLastBtn").addEventListener("click",cancelLast);$("deleteNumberBtn").addEventListener("click",deleteNumber);$("deleteNumberInput").addEventListener("keydown",e=>{if(e.key==="Enter")deleteNumber()});$("manModeBtn").addEventListener("click",()=>{manMode=!manMode;save();render();});$("settingsBtn").addEventListener("click",()=>{fillSettings();$("settingsPanel").hidden=false});$("closeSettings").addEventListener("click",()=>$("settingsPanel").hidden=true);$("saveSettings").addEventListener("click",saveSettings);$("clearRecordsBtn").addEventListener("click",clearRecords);$("testConnectionBtn").addEventListener("click",testDestination);$("sMode").addEventListener("change",()=>{const rw=$("relayGapWrap");if(rw)rw.hidden=$("sMode").value!=="RELAY";});window.addEventListener("online",()=>{render();processQueue();});window.addEventListener("offline",render);setInterval(refreshClock,500);window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstall=e;$("installBtn").hidden=false});$("installBtn").addEventListener("click",async()=>{if(deferredInstall){deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;$("installBtn").hidden=true}});if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");load();window.deleteNumber=deleteNumber;
 
