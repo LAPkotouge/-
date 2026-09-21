@@ -76,6 +76,15 @@ function renderHistory(){
 
 
 
+
+function confirmCriticalAction(label,phrase){
+  if(fieldLock){const s=$("status");if(s)s.textContent="🔒 誤操作防止ON：先にロックを解除してください";return false;}
+  if(!confirm("【重大操作】"+label+"\n\nこの操作は通常の受付中には使用しません。\n続行しますか？"))return false;
+  const entered=prompt("最終確認です。実行する場合は「"+phrase+"」と入力してください。","");
+  if(entered!==phrase){const s=$("status");if(s)s.textContent="重大操作を中止しました";return false;}
+  return true;
+}
+
 function renderFieldLock(){
   const btn=$("v31FieldLockBtn");if(!btn)return;
   btn.textContent=fieldLock?"🔒 誤操作防止 ON":"🔓 誤操作防止 OFF";btn.classList.toggle("on",fieldLock);
