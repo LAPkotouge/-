@@ -11,6 +11,8 @@ let records = [], sendQueue = [], ok = 0, muri = 0, recognition = null, listenin
 let lastSpeech = "—";
 let speechCandidateTs = 0;
 let packMode = false;
+let lastRecognitionConfidence = 0;
+let lastRecognitionDelayMs = 0;
 
 function load(){
   try{ Object.assign(cfg, JSON.parse(localStorage.getItem(KEY_CFG)||"{}")); }catch{}
@@ -68,6 +70,17 @@ function renderHistory(){
   }).join("");
 }
 
+
+function renderFieldAlert(){
+  const box=$("v31FieldAlert"),main=$("v31FieldAlertMain"),sub=$("v31FieldAlertSub");if(!box||!main||!sub)return;
+  const q=sendQueue.length;
+  if(!navigator.onLine){box.className="v31FieldAlert offline";main.textContent="オフライン";sub.textContent=q?`端末保存中・未送信 ${q}件`:"端末保存で受付継続";return;}
+  if(q>=10){box.className="v31FieldAlert danger";main.textContent="未送信増加";sub.textContent=`${q}件を端末保持・自動再送中`;return;}
+  if(q>0){box.className="v31FieldAlert warn";main.textContent="送信待ち";sub.textContent=`未送信 ${q}件`;return;}
+  if(lastRecognitionConfidence>0&&lastRecognitionConfidence<0.45){box.className="v31FieldAlert warn";main.textContent="音声認識 注意";sub.textContent=`確信度 ${Math.round(lastRecognitionConfidence*100)}%`;return;}
+  box.className="v31FieldAlert ok";main.textContent=listening?"音声受付 正常":"受付準備OK";sub.textContent=lastRecognitionDelayMs?`直近認識 約${lastRecognitionDelayMs}ms`:"未送信 0件";
+}
+
 function render(){
   $("event").textContent=cfg.event; $("eventDate").textContent=fmtDate(cfg.date); $("point").textContent=cfg.point||"地点未設定"; $("staff").textContent="担当："+(cfg.staff||"未設定"); $("destination").textContent="保存先："+destinationLabel();
   if($("modeBadge")) $("modeBadge").textContent=modeName();
@@ -80,7 +93,7 @@ function render(){
   const pb=$("packModeBtn");if(pb){pb.textContent=packMode?"集団モード ON":"集団モード OFF";pb.classList.toggle("on",packMode);}
   const ph=$("packModeHint");if(ph)ph.textContent=packMode?"連続番号をまとめて読み上げ可":"通常受付";
   const b=$("manModeBtn"); if(b){b.hidden=cfg.mode==="EKIDEN";b.innerHTML=`<span>万台</span><span>モード</span>`;b.style.background=manMode?"#0b57d0":"#fff";b.style.color=manMode?"#fff":"#c64b14";b.title=manMode?"万台番号モード ON":"万台番号モード OFF";}
-  const mh=$("manModeHint");if(mh)mh.hidden=cfg.mode==="EKIDEN"; const rw=$("relayGapWrap");if(rw)rw.hidden=cfg.mode!=="RELAY";
+  const mh=$("manModeHint");if(mh)mh.hidden=cfg.mode==="EKIDEN"; const rw=$("relayGapWrap");if(rw)rw.hidden=cfg.mode!=="RELAY"; renderFieldAlert();
 }
 function refreshClock(){ if($("currentTime"))$("currentTime").textContent=now(); if($("countdown"))$("countdown").textContent=topRemain(); }
 
@@ -158,7 +171,7 @@ function addPack(values,rawSpeech,captureTs,confidence=0){
 }
 function startRecognition(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){alert("このブラウザは音声認識に対応していません。Chromeを使用してください。");return}recognition=new SR();recognition.lang="ja-JP";recognition.interimResults=false;recognition.continuous=false;recognition.onaudiostart=()=>{speechCandidateTs=Date.now();};
 recognition.onspeechstart=()=>{recognition._speechStartTs=Date.now();};
-recognition.onresult=e=>{const alt=e.results[0][0];const confidence=Number(alt.confidence)||0;const captureTs=recognition._speechStartTs||speechCandidateTs||Date.now();recognition._speechStartTs=0;speechCandidateTs=0;const t=alt.transcript;showRecognitionRaw(t);
+recognition.onresult=e=>{const alt=e.results[0][0];const confidence=Number(alt.confidence)||0;const captureTs=recognition._speechStartTs||speechCandidateTs||Date.now();recognition._speechStartTs=0;speechCandidateTs=0;lastRecognitionConfidence=confidence;lastRecognitionDelayMs=Math.max(0,Date.now()-captureTs);const t=alt.transcript;showRecognitionRaw(t);
 if(packMode){const pack=parsePackNumbers(t);if(pack.length>=2){addPack(pack,t,captureTs,confidence);return;}}
 const v=parseNumber(t);if(v==="CANCEL")cancelLast();else if(v==="MURI")add("ムリ",false,t,captureTs,confidence);else if(v)add(v,true,t,captureTs,confidence);else $("status").textContent=`認識できません：「${t}」`;};recognition.onerror=e=>{speechCandidateTs=0;if(e.error!=="aborted")$("status").textContent="音声認識エラー："+e.error;};recognition.onend=()=>{if(listening){clearTimeout(restartTimer);restartTimer=setTimeout(()=>{try{recognition.start()}catch{}},180)}};listening=true;render();try{recognition.start()}catch{}}
 function stopRecognition(){listening=false;clearTimeout(restartTimer);try{recognition&&recognition.abort()}catch{}render()}
