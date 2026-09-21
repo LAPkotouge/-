@@ -16,6 +16,7 @@ let lastRecognitionConfidence = 0;
 let lastRecognitionDelayMs = 0;
 let fieldLock = false;
 let micTestPassed = false;
+let raceLiveMode = false;
 
 function load(){
   try{ Object.assign(cfg, JSON.parse(localStorage.getItem(KEY_CFG)||"{}")); }catch{}
@@ -109,12 +110,17 @@ function renderStartFlow(){
   ];
   wrap.innerHTML=steps.map(([n,ok])=>`<span class="${ok?"ok":"ng"}">${ok?"✓":"△"} ${n}</span>`).join("");
   btn.disabled=!(eventOk&&speechOk&&micTestPassed&&fieldLock);
-  btn.textContent=listening?"● 本番受付中":"本番受付を開始";
+  btn.textContent=raceLiveMode?"● 本番受付中":"本番受付を開始";
+}
+function setRaceLiveMode(on){
+  raceLiveMode=!!on;document.body.classList.toggle("v31-race-live",raceLiveMode);
+  const exitBtn=$("v31ExitRaceBtn");if(exitBtn)exitBtn.hidden=!raceLiveMode;
+  renderStartFlow();
 }
 function startRaceReception(){
   if(!fieldLock){$("status").textContent="誤操作防止をONにしてください";return;}
   if(!micTestPassed){$("status").textContent="先に端末音声テストを実施してください";return;}
-  if(!listening)startRecognition();
+  setRaceLiveMode(true);if(!listening)startRecognition();
 }
 
 function renderFieldAlert(){
@@ -231,6 +237,7 @@ $("packModeBtn")?.addEventListener("click",()=>{packMode=!packMode;save();render
 $("v31MicTestBtn")?.addEventListener("click",runMicTest);
 $("v31FieldLockBtn")?.addEventListener("click",()=>{toggleFieldLock();renderStartFlow();});
 $("v31StartBtn")?.addEventListener("click",startRaceReception);
+$("v31ExitRaceBtn")?.addEventListener("click",()=>{if(!confirm("本番モードを終了しますか？\n受付データは消えません。"))return;stopRecognition();setRaceLiveMode(false);});
 window.addEventListener("online",renderStartFlow);window.addEventListener("offline",renderStartFlow);$("registerBtn").addEventListener("click",registerManual);$("numberInput").addEventListener("keydown",e=>{if(e.key==="Enter")registerManual()});$("muriBtn").addEventListener("click",()=>add("ムリ",false,"ボタン"));$("cancelLastBtn").addEventListener("click",cancelLast);$("deleteNumberBtn").addEventListener("click",deleteNumber);$("deleteNumberInput").addEventListener("keydown",e=>{if(e.key==="Enter")deleteNumber()});$("manModeBtn").addEventListener("click",()=>{manMode=!manMode;save();render();});$("settingsBtn").addEventListener("click",()=>{fillSettings();$("settingsPanel").hidden=false});$("closeSettings").addEventListener("click",()=>$("settingsPanel").hidden=true);$("saveSettings").addEventListener("click",saveSettings);$("clearRecordsBtn").addEventListener("click",clearRecords);$("testConnectionBtn").addEventListener("click",testDestination);$("sMode").addEventListener("change",()=>{const rw=$("relayGapWrap");if(rw)rw.hidden=$("sMode").value!=="RELAY";});window.addEventListener("online",()=>{render();processQueue();});window.addEventListener("offline",render);setInterval(refreshClock,500);window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstall=e;$("installBtn").hidden=false});$("installBtn").addEventListener("click",async()=>{if(deferredInstall){deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;$("installBtn").hidden=true}});if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");load();window.deleteNumber=deleteNumber;
 
 // =====================================================
