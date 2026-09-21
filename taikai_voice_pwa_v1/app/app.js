@@ -15,6 +15,7 @@ let packMode = false;
 let lastRecognitionConfidence = 0;
 let lastRecognitionDelayMs = 0;
 let fieldLock = false;
+let micTestPassed = false;
 
 function load(){
   try{ Object.assign(cfg, JSON.parse(localStorage.getItem(KEY_CFG)||"{}")); }catch{}
@@ -97,6 +98,25 @@ function toggleFieldLock(){
   const s=$("status");if(s)s.textContent=fieldLock?"🔒 誤操作防止ON：受付操作だけ使用できます":"🔓 誤操作防止を解除しました";
 }
 
+
+function renderStartFlow(){
+  const wrap=$("v31StartSteps"),btn=$("v31StartBtn");if(!wrap||!btn)return;
+  const eventOk=!!(cfg.event&&cfg.point&&cfg.staff);
+  const speechOk=!!(window.SpeechRecognition||window.webkitSpeechRecognition);
+  const networkOk=navigator.onLine;
+  const steps=[
+    ["大会・地点",eventOk],["音声対応",speechOk],["通信",networkOk],["音声テスト",micTestPassed],["誤操作防止",fieldLock]
+  ];
+  wrap.innerHTML=steps.map(([n,ok])=>`<span class="${ok?"ok":"ng"}">${ok?"✓":"△"} ${n}</span>`).join("");
+  btn.disabled=!(eventOk&&speechOk&&micTestPassed&&fieldLock);
+  btn.textContent=listening?"● 本番受付中":"本番受付を開始";
+}
+function startRaceReception(){
+  if(!fieldLock){$("status").textContent="誤操作防止をONにしてください";return;}
+  if(!micTestPassed){$("status").textContent="先に端末音声テストを実施してください";return;}
+  if(!listening)startRecognition();
+}
+
 function renderFieldAlert(){
   const box=$("v31FieldAlert"),main=$("v31FieldAlertMain"),sub=$("v31FieldAlertSub");if(!box||!main||!sub)return;
   const q=sendQueue.length;
@@ -119,7 +139,7 @@ function render(){
   const pb=$("packModeBtn");if(pb){pb.textContent=packMode?"集団モード ON":"集団モード OFF";pb.classList.toggle("on",packMode);}
   const ph=$("packModeHint");if(ph)ph.textContent=packMode?"連続番号をまとめて読み上げ可":"通常受付";
   const b=$("manModeBtn"); if(b){b.hidden=cfg.mode==="EKIDEN";b.innerHTML=`<span>万台</span><span>モード</span>`;b.style.background=manMode?"#0b57d0":"#fff";b.style.color=manMode?"#fff":"#c64b14";b.title=manMode?"万台番号モード ON":"万台番号モード OFF";}
-  const mh=$("manModeHint");if(mh)mh.hidden=cfg.mode==="EKIDEN"; const rw=$("relayGapWrap");if(rw)rw.hidden=cfg.mode!=="RELAY"; renderFieldAlert(); renderFieldLock();
+  const mh=$("manModeHint");if(mh)mh.hidden=cfg.mode==="EKIDEN"; const rw=$("relayGapWrap");if(rw)rw.hidden=cfg.mode!=="RELAY"; renderFieldAlert(); renderFieldLock(); renderStartFlow();
 }
 function refreshClock(){ if($("currentTime"))$("currentTime").textContent=now(); if($("countdown"))$("countdown").textContent=topRemain(); }
 
@@ -172,9 +192,9 @@ function runMicTest(){
   let started=0;
   btn.disabled=true;state.textContent="待機中";quality.textContent="—";result.textContent="「1234」など、実際のゼッケン番号のように読み上げてください。";
   test.onspeechstart=()=>{started=Date.now();state.textContent="音声検知";};
-  test.onresult=e=>{const alt=e.results[0][0],raw=alt.transcript,conf=Number(alt.confidence)||0,v=parseNumber(raw),q=recognitionQuality(conf),delay=started?Date.now()-started:0;state.textContent=v?"認識OK":"認識注意";quality.textContent=q.mark+" "+q.label;result.textContent=v?`認識：「${raw}」 → ナンバー ${v} ／ 認識時間 約${delay}ms`:`認識：「${raw}」 → ナンバー化できませんでした`;};
+  test.onresult=e=>{const alt=e.results[0][0],raw=alt.transcript,conf=Number(alt.confidence)||0,v=parseNumber(raw),q=recognitionQuality(conf),delay=started?Date.now()-started:0;micTestPassed=!!v;state.textContent=v?"認識OK":"認識注意";quality.textContent=q.mark+" "+q.label;result.textContent=v?`認識：「${raw}」 → ナンバー ${v} ／ 認識時間 約${delay}ms`:`認識：「${raw}」 → ナンバー化できませんでした`;};
   test.onerror=e=>{state.textContent="エラー";quality.textContent="⚠";result.textContent="音声認識エラー："+e.error;};
-  test.onend=()=>{btn.disabled=false;};
+  test.onend=()=>{btn.disabled=false;renderStartFlow();};
   try{test.start();}catch(e){btn.disabled=false;state.textContent="開始失敗";result.textContent="音声テストを開始できませんでした。";}
 }
 
@@ -209,7 +229,9 @@ function testDestination(){const status=$("connectionStatus"),endpoint=$("sEndpo
 $("voiceBtn").addEventListener("click",()=>listening?stopRecognition():startRecognition());
 $("packModeBtn")?.addEventListener("click",()=>{packMode=!packMode;save();render();});
 $("v31MicTestBtn")?.addEventListener("click",runMicTest);
-$("v31FieldLockBtn")?.addEventListener("click",toggleFieldLock);$("registerBtn").addEventListener("click",registerManual);$("numberInput").addEventListener("keydown",e=>{if(e.key==="Enter")registerManual()});$("muriBtn").addEventListener("click",()=>add("ムリ",false,"ボタン"));$("cancelLastBtn").addEventListener("click",cancelLast);$("deleteNumberBtn").addEventListener("click",deleteNumber);$("deleteNumberInput").addEventListener("keydown",e=>{if(e.key==="Enter")deleteNumber()});$("manModeBtn").addEventListener("click",()=>{manMode=!manMode;save();render();});$("settingsBtn").addEventListener("click",()=>{fillSettings();$("settingsPanel").hidden=false});$("closeSettings").addEventListener("click",()=>$("settingsPanel").hidden=true);$("saveSettings").addEventListener("click",saveSettings);$("clearRecordsBtn").addEventListener("click",clearRecords);$("testConnectionBtn").addEventListener("click",testDestination);$("sMode").addEventListener("change",()=>{const rw=$("relayGapWrap");if(rw)rw.hidden=$("sMode").value!=="RELAY";});window.addEventListener("online",()=>{render();processQueue();});window.addEventListener("offline",render);setInterval(refreshClock,500);window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstall=e;$("installBtn").hidden=false});$("installBtn").addEventListener("click",async()=>{if(deferredInstall){deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;$("installBtn").hidden=true}});if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");load();window.deleteNumber=deleteNumber;
+$("v31FieldLockBtn")?.addEventListener("click",()=>{toggleFieldLock();renderStartFlow();});
+$("v31StartBtn")?.addEventListener("click",startRaceReception);
+window.addEventListener("online",renderStartFlow);window.addEventListener("offline",renderStartFlow);$("registerBtn").addEventListener("click",registerManual);$("numberInput").addEventListener("keydown",e=>{if(e.key==="Enter")registerManual()});$("muriBtn").addEventListener("click",()=>add("ムリ",false,"ボタン"));$("cancelLastBtn").addEventListener("click",cancelLast);$("deleteNumberBtn").addEventListener("click",deleteNumber);$("deleteNumberInput").addEventListener("keydown",e=>{if(e.key==="Enter")deleteNumber()});$("manModeBtn").addEventListener("click",()=>{manMode=!manMode;save();render();});$("settingsBtn").addEventListener("click",()=>{fillSettings();$("settingsPanel").hidden=false});$("closeSettings").addEventListener("click",()=>$("settingsPanel").hidden=true);$("saveSettings").addEventListener("click",saveSettings);$("clearRecordsBtn").addEventListener("click",clearRecords);$("testConnectionBtn").addEventListener("click",testDestination);$("sMode").addEventListener("change",()=>{const rw=$("relayGapWrap");if(rw)rw.hidden=$("sMode").value!=="RELAY";});window.addEventListener("online",()=>{render();processQueue();});window.addEventListener("offline",render);setInterval(refreshClock,500);window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstall=e;$("installBtn").hidden=false});$("installBtn").addEventListener("click",async()=>{if(deferredInstall){deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;$("installBtn").hidden=true}});if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");load();window.deleteNumber=deleteNumber;
 
 // =====================================================
 // V30：大会別記録スプレッドシート自動作成
