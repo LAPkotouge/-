@@ -20,6 +20,8 @@
         value:String(item.value||''),
         recognized:item.recognized?'1':'0',
         duplicate:item.duplicate?'1':'0',
+        duplicateSeconds:String(item.duplicateSeconds||''),
+        suspiciousRepeat:item.suspiciousRepeat?'1':'0',
         lap:String(item.lap||''),
         mode:String(item.mode||cfg.mode||''),
         event:String(item.event||cfg.event||''),
