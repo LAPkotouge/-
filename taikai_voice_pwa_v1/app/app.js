@@ -112,10 +112,29 @@ function renderStartFlow(){
   btn.disabled=!(eventOk&&speechOk&&micTestPassed&&fieldLock);
   btn.textContent=raceLiveMode?"● 本番受付中":"本番受付を開始";
 }
+
+function latestUndoableRecord(){
+  return records.find(r=>!r.cancelled&&!r.invalidGap)||null;
+}
+function renderQuickUndo(){
+  const b=$("v31QuickUndoBtn"),i=$("v31UndoInfo");if(!b||!i)return;
+  const r=latestUndoableRecord();
+  b.disabled=!r;
+  i.textContent=r?`取消対象：No.${r.seqNo}　${r.value}　${r.time}`:"取消対象：なし";
+}
+function quickUndoLatest(){
+  const r=latestUndoableRecord();if(!r){$("status").textContent="取消できる直前データがありません";return;}
+  const age=Math.max(0,Math.round((Date.now()-(Number(r.captureTs)||Number(r.ts)||Date.now()))/1000));
+  if(age>30&&!confirm(`直前記録「${r.value}」は${age}秒前です。取消しますか？`))return;
+  cancelRecord(r.id);
+  $("status").textContent=`↩ 直前1件を取消：${r.value}`;
+  renderQuickUndo();
+}
+
 function setRaceLiveMode(on){
   raceLiveMode=!!on;document.body.classList.toggle("v31-race-live",raceLiveMode);
   const exitBtn=$("v31ExitRaceBtn");if(exitBtn)exitBtn.hidden=!raceLiveMode;
-  renderStartFlow();
+  renderStartFlow();renderQuickUndo();
 }
 function startRaceReception(){
   if(!fieldLock){$("status").textContent="誤操作防止をONにしてください";return;}
@@ -237,6 +256,7 @@ $("packModeBtn")?.addEventListener("click",()=>{packMode=!packMode;save();render
 $("v31MicTestBtn")?.addEventListener("click",runMicTest);
 $("v31FieldLockBtn")?.addEventListener("click",()=>{toggleFieldLock();renderStartFlow();});
 $("v31StartBtn")?.addEventListener("click",startRaceReception);
+$("v31QuickUndoBtn")?.addEventListener("click",quickUndoLatest);
 $("v31ExitRaceBtn")?.addEventListener("click",()=>{if(!confirm("本番モードを終了しますか？\n受付データは消えません。"))return;stopRecognition();setRaceLiveMode(false);});
 window.addEventListener("online",renderStartFlow);window.addEventListener("offline",renderStartFlow);$("registerBtn").addEventListener("click",registerManual);$("numberInput").addEventListener("keydown",e=>{if(e.key==="Enter")registerManual()});$("muriBtn").addEventListener("click",()=>add("ムリ",false,"ボタン"));$("cancelLastBtn").addEventListener("click",cancelLast);$("deleteNumberBtn").addEventListener("click",deleteNumber);$("deleteNumberInput").addEventListener("keydown",e=>{if(e.key==="Enter")deleteNumber()});$("manModeBtn").addEventListener("click",()=>{manMode=!manMode;save();render();});$("settingsBtn").addEventListener("click",()=>{fillSettings();$("settingsPanel").hidden=false});$("closeSettings").addEventListener("click",()=>$("settingsPanel").hidden=true);$("saveSettings").addEventListener("click",saveSettings);$("clearRecordsBtn").addEventListener("click",clearRecords);$("testConnectionBtn").addEventListener("click",testDestination);$("sMode").addEventListener("change",()=>{const rw=$("relayGapWrap");if(rw)rw.hidden=$("sMode").value!=="RELAY";});window.addEventListener("online",()=>{render();processQueue();});window.addEventListener("offline",render);setInterval(refreshClock,500);window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstall=e;$("installBtn").hidden=false});$("installBtn").addEventListener("click",async()=>{if(deferredInstall){deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;$("installBtn").hidden=true}});if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");load();window.deleteNumber=deleteNumber;
 
