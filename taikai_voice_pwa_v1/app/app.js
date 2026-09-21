@@ -116,6 +116,29 @@ async function deleteNumber(){const input=$("deleteNumberInput");if(!input)retur
 
 async function processQueue(){if(isSending||!sendQueue.length||!cfg.endpoint||!navigator.onLine)return;isSending=true;while(sendQueue.length&&navigator.onLine){const item=sendQueue[0];try{const payload={...item,sheetId:item.sheetId||cfg.sheetId||""};const c=new AbortController(),t=setTimeout(()=>c.abort(),5000);await fetch(cfg.endpoint,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),signal:c.signal});clearTimeout(t);sendQueue.shift();save();render();}catch{break}}isSending=false;}
 function registerManual(){const v=parseNumber($("numberInput").value.trim());if(v==="CANCEL"){cancelLast();$("numberInput").value="";return}if(!v){alert(cfg.mode==="RELAY"?"1～99999の番号を入力してください。":manMode?"万台モードでは10,000～99,999を入力するか1桁ずつ読んでください。":cfg.mode==="EKIDEN"?"駅伝は 125-3（1～9999×1～25区）で入力してください。":"1～99999の番号を入力してください。");return}add(v==="MURI"?"ムリ":v,v!=="MURI",$("numberInput").value.trim());$("numberInput").value="";$("numberInput").focus();}
+
+function recognitionQuality(conf){
+  const n=Number(conf)||0;
+  if(!n)return {label:"確信度なし",mark:"△"};
+  if(n>=0.75)return {label:"良好 "+Math.round(n*100)+"%",mark:"●"};
+  if(n>=0.45)return {label:"注意 "+Math.round(n*100)+"%",mark:"△"};
+  return {label:"低い "+Math.round(n*100)+"%",mark:"⚠"};
+}
+function runMicTest(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const state=$("v31MicState"),quality=$("v31Quality"),result=$("v31MicTestResult"),btn=$("v31MicTestBtn");
+  if(!SR){state.textContent="非対応";quality.textContent="⚠";result.textContent="このブラウザでは音声認識を使用できません。";return;}
+  if(listening){result.textContent="本番音声受付を停止してから端末テストしてください。";return;}
+  const test=new SR();test.lang="ja-JP";test.interimResults=false;test.continuous=false;
+  let started=0;
+  btn.disabled=true;state.textContent="待機中";quality.textContent="—";result.textContent="「1234」など、実際のゼッケン番号のように読み上げてください。";
+  test.onspeechstart=()=>{started=Date.now();state.textContent="音声検知";};
+  test.onresult=e=>{const alt=e.results[0][0],raw=alt.transcript,conf=Number(alt.confidence)||0,v=parseNumber(raw),q=recognitionQuality(conf),delay=started?Date.now()-started:0;state.textContent=v?"認識OK":"認識注意";quality.textContent=q.mark+" "+q.label;result.textContent=v?`認識：「${raw}」 → ナンバー ${v} ／ 認識時間 約${delay}ms`:`認識：「${raw}」 → ナンバー化できませんでした`;};
+  test.onerror=e=>{state.textContent="エラー";quality.textContent="⚠";result.textContent="音声認識エラー："+e.error;};
+  test.onend=()=>{btn.disabled=false;};
+  try{test.start();}catch(e){btn.disabled=false;state.textContent="開始失敗";result.textContent="音声テストを開始できませんでした。";}
+}
+
 function parsePackNumbers(raw){
   const normalized=(raw||"").normalize("NFKC").replace(/[、，,／/・]+/g," ").trim();
   if(!normalized)return [];
@@ -145,7 +168,8 @@ function clearRecords(){if(!confirm("この端末の登録データを全て消�
 function testDestination(){const status=$("connectionStatus"),endpoint=$("sEndpoint").value.trim(),sheetId=$("sSheetId").value.trim();if(!endpoint){status.textContent="❌ Google Apps Script URLを入力してください";return}if(!sheetId){status.textContent="❌ 保存先スプレッドシートIDを入力してください";return}status.textContent="接続確認中…";const payload={action:"PING",sheetId,event:$("sEvent").value||"接続確認",date:$("sDate").value||"",mode:$("sMode").value||"MARATHON",point:$("sPoint").value||"接続確認",staff:$("sStaff").value||"",time:now(),id:"PING_"+Date.now()};const c=new AbortController(),timer=setTimeout(()=>c.abort(),15000);fetch(endpoint,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),signal:c.signal}).then(()=>{clearTimeout(timer);cfg.sheetId=sheetId;cfg.sheetName="";status.textContent="✅ 接続要求を送信できました。保存後、テスト番号を1件登録して確認してください。";}).catch(()=>{clearTimeout(timer);status.textContent="❌ 接続確認できませんでした。URL・ID・通信状態を確認してください。";});}
 
 $("voiceBtn").addEventListener("click",()=>listening?stopRecognition():startRecognition());
-$("packModeBtn")?.addEventListener("click",()=>{packMode=!packMode;save();render();});$("registerBtn").addEventListener("click",registerManual);$("numberInput").addEventListener("keydown",e=>{if(e.key==="Enter")registerManual()});$("muriBtn").addEventListener("click",()=>add("ムリ",false,"ボタン"));$("cancelLastBtn").addEventListener("click",cancelLast);$("deleteNumberBtn").addEventListener("click",deleteNumber);$("deleteNumberInput").addEventListener("keydown",e=>{if(e.key==="Enter")deleteNumber()});$("manModeBtn").addEventListener("click",()=>{manMode=!manMode;save();render();});$("settingsBtn").addEventListener("click",()=>{fillSettings();$("settingsPanel").hidden=false});$("closeSettings").addEventListener("click",()=>$("settingsPanel").hidden=true);$("saveSettings").addEventListener("click",saveSettings);$("clearRecordsBtn").addEventListener("click",clearRecords);$("testConnectionBtn").addEventListener("click",testDestination);$("sMode").addEventListener("change",()=>{const rw=$("relayGapWrap");if(rw)rw.hidden=$("sMode").value!=="RELAY";});window.addEventListener("online",()=>{render();processQueue();});window.addEventListener("offline",render);setInterval(refreshClock,500);window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstall=e;$("installBtn").hidden=false});$("installBtn").addEventListener("click",async()=>{if(deferredInstall){deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;$("installBtn").hidden=true}});if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");load();window.deleteNumber=deleteNumber;
+$("packModeBtn")?.addEventListener("click",()=>{packMode=!packMode;save();render();});
+$("v31MicTestBtn")?.addEventListener("click",runMicTest);$("registerBtn").addEventListener("click",registerManual);$("numberInput").addEventListener("keydown",e=>{if(e.key==="Enter")registerManual()});$("muriBtn").addEventListener("click",()=>add("ムリ",false,"ボタン"));$("cancelLastBtn").addEventListener("click",cancelLast);$("deleteNumberBtn").addEventListener("click",deleteNumber);$("deleteNumberInput").addEventListener("keydown",e=>{if(e.key==="Enter")deleteNumber()});$("manModeBtn").addEventListener("click",()=>{manMode=!manMode;save();render();});$("settingsBtn").addEventListener("click",()=>{fillSettings();$("settingsPanel").hidden=false});$("closeSettings").addEventListener("click",()=>$("settingsPanel").hidden=true);$("saveSettings").addEventListener("click",saveSettings);$("clearRecordsBtn").addEventListener("click",clearRecords);$("testConnectionBtn").addEventListener("click",testDestination);$("sMode").addEventListener("change",()=>{const rw=$("relayGapWrap");if(rw)rw.hidden=$("sMode").value!=="RELAY";});window.addEventListener("online",()=>{render();processQueue();});window.addEventListener("offline",render);setInterval(refreshClock,500);window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstall=e;$("installBtn").hidden=false});$("installBtn").addEventListener("click",async()=>{if(deferredInstall){deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;$("installBtn").hidden=true}});if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");load();window.deleteNumber=deleteNumber;
 
 // =====================================================
 // V30：大会別記録スプレッドシート自動作成
