@@ -5,6 +5,7 @@ const KEY_QUEUE = "taikai_voice_queue_v1";
 const KEY_MAN = "taikai_voice_man_mode_v1";
 const KEY_SEQ = "taikai_voice_seq_v1";
 const KEY_PACK = "lap_number_v31_pack_mode";
+const KEY_FIELD_LOCK = "lap_number_v31_field_lock";
 
 let cfg = { event:"大会名未設定", date:"", mode:"MARATHON", point:"地点未設定", staff:"", top:"", relayGap:1, endpoint:"", sheetId:"", sheetName:"" };
 let records = [], sendQueue = [], ok = 0, muri = 0, recognition = null, listening = false, restartTimer = null, deferredInstall = null, isSending = false, manMode = false, seqCounter = 0;
@@ -13,6 +14,7 @@ let speechCandidateTs = 0;
 let packMode = false;
 let lastRecognitionConfidence = 0;
 let lastRecognitionDelayMs = 0;
+let fieldLock = false;
 
 function load(){
   try{ Object.assign(cfg, JSON.parse(localStorage.getItem(KEY_CFG)||"{}")); }catch{}
@@ -23,6 +25,7 @@ function load(){
   try{ sendQueue = JSON.parse(localStorage.getItem(KEY_QUEUE)||"[]"); }catch{ sendQueue=[]; }
   manMode = localStorage.getItem(KEY_MAN)==="1";
   packMode = localStorage.getItem(KEY_PACK)==="1";
+  fieldLock = localStorage.getItem(KEY_FIELD_LOCK)==="1";
   seqCounter = Number(localStorage.getItem(KEY_SEQ)||0) || 0;
   migrateSequenceNumbers();
   recount(); render(); processQueue();
@@ -46,6 +49,7 @@ function save(){
   localStorage.setItem(KEY_MAN, manMode ? "1" : "0");
   localStorage.setItem(KEY_SEQ, String(seqCounter));
   localStorage.setItem(KEY_PACK, packMode ? "1" : "0");
+  localStorage.setItem(KEY_FIELD_LOCK, fieldLock ? "1" : "0");
 }
 
 function nextSeq(){ seqCounter+=1; return seqCounter; }
@@ -71,6 +75,19 @@ function renderHistory(){
 }
 
 
+
+function renderFieldLock(){
+  const btn=$("v31FieldLockBtn");if(!btn)return;
+  btn.textContent=fieldLock?"🔒 誤操作防止 ON":"🔓 誤操作防止 OFF";btn.classList.toggle("on",fieldLock);
+  // Keep reception, direct input, MURI and last-cancel usable. Lock setup/destructive controls.
+  const protectedIds=["settingsBtn","clearBtn","sheetClearBtn","restoreBtn","sharedSaveBtn","sharedDeleteBtn","createEventBtn"];
+  protectedIds.forEach(id=>{const el=$(id);if(el)el.classList.toggle("v31LockedControl",fieldLock);});
+}
+function toggleFieldLock(){
+  fieldLock=!fieldLock;save();renderFieldLock();
+  const s=$("status");if(s)s.textContent=fieldLock?"🔒 誤操作防止ON：受付操作だけ使用できます":"🔓 誤操作防止を解除しました";
+}
+
 function renderFieldAlert(){
   const box=$("v31FieldAlert"),main=$("v31FieldAlertMain"),sub=$("v31FieldAlertSub");if(!box||!main||!sub)return;
   const q=sendQueue.length;
@@ -93,7 +110,7 @@ function render(){
   const pb=$("packModeBtn");if(pb){pb.textContent=packMode?"集団モード ON":"集団モード OFF";pb.classList.toggle("on",packMode);}
   const ph=$("packModeHint");if(ph)ph.textContent=packMode?"連続番号をまとめて読み上げ可":"通常受付";
   const b=$("manModeBtn"); if(b){b.hidden=cfg.mode==="EKIDEN";b.innerHTML=`<span>万台</span><span>モード</span>`;b.style.background=manMode?"#0b57d0":"#fff";b.style.color=manMode?"#fff":"#c64b14";b.title=manMode?"万台番号モード ON":"万台番号モード OFF";}
-  const mh=$("manModeHint");if(mh)mh.hidden=cfg.mode==="EKIDEN"; const rw=$("relayGapWrap");if(rw)rw.hidden=cfg.mode!=="RELAY"; renderFieldAlert();
+  const mh=$("manModeHint");if(mh)mh.hidden=cfg.mode==="EKIDEN"; const rw=$("relayGapWrap");if(rw)rw.hidden=cfg.mode!=="RELAY"; renderFieldAlert(); renderFieldLock();
 }
 function refreshClock(){ if($("currentTime"))$("currentTime").textContent=now(); if($("countdown"))$("countdown").textContent=topRemain(); }
 
@@ -182,7 +199,8 @@ function testDestination(){const status=$("connectionStatus"),endpoint=$("sEndpo
 
 $("voiceBtn").addEventListener("click",()=>listening?stopRecognition():startRecognition());
 $("packModeBtn")?.addEventListener("click",()=>{packMode=!packMode;save();render();});
-$("v31MicTestBtn")?.addEventListener("click",runMicTest);$("registerBtn").addEventListener("click",registerManual);$("numberInput").addEventListener("keydown",e=>{if(e.key==="Enter")registerManual()});$("muriBtn").addEventListener("click",()=>add("ムリ",false,"ボタン"));$("cancelLastBtn").addEventListener("click",cancelLast);$("deleteNumberBtn").addEventListener("click",deleteNumber);$("deleteNumberInput").addEventListener("keydown",e=>{if(e.key==="Enter")deleteNumber()});$("manModeBtn").addEventListener("click",()=>{manMode=!manMode;save();render();});$("settingsBtn").addEventListener("click",()=>{fillSettings();$("settingsPanel").hidden=false});$("closeSettings").addEventListener("click",()=>$("settingsPanel").hidden=true);$("saveSettings").addEventListener("click",saveSettings);$("clearRecordsBtn").addEventListener("click",clearRecords);$("testConnectionBtn").addEventListener("click",testDestination);$("sMode").addEventListener("change",()=>{const rw=$("relayGapWrap");if(rw)rw.hidden=$("sMode").value!=="RELAY";});window.addEventListener("online",()=>{render();processQueue();});window.addEventListener("offline",render);setInterval(refreshClock,500);window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstall=e;$("installBtn").hidden=false});$("installBtn").addEventListener("click",async()=>{if(deferredInstall){deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;$("installBtn").hidden=true}});if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");load();window.deleteNumber=deleteNumber;
+$("v31MicTestBtn")?.addEventListener("click",runMicTest);
+$("v31FieldLockBtn")?.addEventListener("click",toggleFieldLock);$("registerBtn").addEventListener("click",registerManual);$("numberInput").addEventListener("keydown",e=>{if(e.key==="Enter")registerManual()});$("muriBtn").addEventListener("click",()=>add("ムリ",false,"ボタン"));$("cancelLastBtn").addEventListener("click",cancelLast);$("deleteNumberBtn").addEventListener("click",deleteNumber);$("deleteNumberInput").addEventListener("keydown",e=>{if(e.key==="Enter")deleteNumber()});$("manModeBtn").addEventListener("click",()=>{manMode=!manMode;save();render();});$("settingsBtn").addEventListener("click",()=>{fillSettings();$("settingsPanel").hidden=false});$("closeSettings").addEventListener("click",()=>$("settingsPanel").hidden=true);$("saveSettings").addEventListener("click",saveSettings);$("clearRecordsBtn").addEventListener("click",clearRecords);$("testConnectionBtn").addEventListener("click",testDestination);$("sMode").addEventListener("change",()=>{const rw=$("relayGapWrap");if(rw)rw.hidden=$("sMode").value!=="RELAY";});window.addEventListener("online",()=>{render();processQueue();});window.addEventListener("offline",render);setInterval(refreshClock,500);window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstall=e;$("installBtn").hidden=false});$("installBtn").addEventListener("click",async()=>{if(deferredInstall){deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;$("installBtn").hidden=true}});if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");load();window.deleteNumber=deleteNumber;
 
 // =====================================================
 // V30：大会別記録スプレッドシート自動作成
