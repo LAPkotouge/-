@@ -57,7 +57,8 @@ function renderHistory(){
   h.innerHTML=active.map(r=>{
     let tag="";
     if(r.mode==="RELAY"&&r.lap) tag=`<span class="historyTag relayTag">${esc(r.lap)}周目</span>`;
-    else if(r.duplicate) tag='<span class="historyTag duplicateTag">重複</span>';
+    else if(r.suspiciousRepeat) tag='<span class="historyTag duplicateTag">重複候補</span>';
+    else if(r.duplicate) tag='<span class="historyTag duplicateTag">再登場</span>';
     else if(r.invalidGap) tag='<span class="historyTag invalidTag">無効</span>';
     return `<div class="row"><span>${esc(r.seqNo||"")}</span><span class="numberCell"><span class="historyNumber">${esc(r.value)}</span>${tag}</span><span>${esc(r.time)}</span></div>`;
   }).join("");
@@ -95,7 +96,12 @@ function makeRecordBase(value,recognized,rawSpeech,captureTs,confidence=0){
 function add(value,recognized=true,rawSpeech="",captureTs=0,confidence=0){
   if(rawSpeech)lastSpeech=rawSpeech;
   if(cfg.mode==="RELAY"&&recognized){const prev=relayLast(value);if(prev){const diff=(Date.now()-prev.ts)/1000;if(diff<cfg.relayGap*60){const rec={...makeRecordBase(value,true,rawSpeech,captureTs,confidence),invalidGap:true,invalidSeconds:Math.round(diff),lap:prev.lap};records.unshift(rec);save();render();$("status").textContent=`⚠ ${value}：${cfg.relayGap}分未満なので無効`;return;}}const lap=prev?(Number(prev.lap)||1)+1:1;const rec={...makeRecordBase(value,true,rawSpeech,captureTs,confidence),duplicate:false,lap};records.unshift(rec);if(cfg.endpoint)sendQueue.push(rec);save();render();processQueue();return;}
-  const duplicate=recognized&&records.some(r=>!r.cancelled&&!r.invalidGap&&r.recognized&&r.value===value);const rec={...makeRecordBase(value,recognized,rawSpeech,captureTs,confidence),duplicate};records.unshift(rec);if(cfg.endpoint)sendQueue.push(rec);save();render();processQueue();if(duplicate)$("status").textContent=`⚠ ${value} は重複です`;
+  const previous=recognized?records.find(r=>!r.cancelled&&!r.invalidGap&&r.recognized&&r.value===value):null;
+  const duplicate=!!previous;
+  const duplicateSeconds=previous?Math.max(0,Math.round(((Number(captureTs)||Date.now())-(Number(previous.captureTs)||Number(previous.ts)||0))/1000)):0;
+  const suspiciousRepeat=!!previous&&duplicateSeconds<=300;
+  const rec={...makeRecordBase(value,recognized,rawSpeech,captureTs,confidence),duplicate,duplicateSeconds,suspiciousRepeat};records.unshift(rec);if(cfg.endpoint)sendQueue.push(rec);save();render();processQueue();if(suspiciousRepeat)$("status").textContent=`⚠ ${value}：${duplicateSeconds}秒前にも受付（重複候補）`;
+  else if(duplicate)$("status").textContent=`△ ${value}：過去にも受付あり（${duplicateSeconds}秒前）`;
 }
 function showRecognitionRaw(s){ lastSpeech=s||"（空）";if($("rawSpeechValue"))$("rawSpeechValue").textContent=lastSpeech; }
 function cancelLast(){ const i=records.findIndex(r=>!r.cancelled);if(i<0){$("status").textContent="キャンセルする登録データがありません";return}const r=records[i];r.cancelled=true;r.cancelledAt=now();r.cancelledBy="キャンセル";sendQueue=sendQueue.filter(q=>q.id!==r.id);save();render();$("status").textContent=`直前の「${r.value}」をキャンセルしました`; }
