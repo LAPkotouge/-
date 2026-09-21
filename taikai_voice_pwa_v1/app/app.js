@@ -113,6 +113,19 @@ function renderStartFlow(){
   btn.textContent=raceLiveMode?"● 本番受付中":"本番受付を開始";
 }
 
+
+let flashTimer=0;
+function flashAccepted(value,confidence=0,isMuri=false){
+  if(!raceLiveMode)return;
+  const box=$("v31Flash"),no=$("v31FlashNo"),meta=$("v31FlashMeta");if(!box||!no||!meta)return;
+  clearTimeout(flashTimer);
+  const low=Number(confidence)>0&&Number(confidence)<0.45;
+  box.className="v31Flash show"+(isMuri?" muri":low?" warn":"");
+  no.textContent=isMuri?"ムリ":value;
+  meta.textContent=isMuri?"1人カウント":low?`⚠ 認識注意　確信度 ${Math.round(Number(confidence)*100)}%`:"✓ 受付";
+  flashTimer=setTimeout(()=>{box.className="v31Flash";},650);
+}
+
 function latestUndoableRecord(){
   return records.find(r=>!r.cancelled&&!r.invalidGap)||null;
 }
@@ -190,7 +203,8 @@ function add(value,recognized=true,rawSpeech="",captureTs=0,confidence=0){
   const duplicate=!!previous;
   const duplicateSeconds=previous?Math.max(0,Math.round(((Number(captureTs)||Date.now())-(Number(previous.captureTs)||Number(previous.ts)||0))/1000)):0;
   const suspiciousRepeat=!!previous&&duplicateSeconds<=300;
-  const rec={...makeRecordBase(value,recognized,rawSpeech,captureTs,confidence),duplicate,duplicateSeconds,suspiciousRepeat};records.unshift(rec);if(cfg.endpoint)sendQueue.push(rec);save();render();processQueue();if(suspiciousRepeat)$("status").textContent=`⚠ ${value}：${duplicateSeconds}秒前にも受付（重複候補）`;
+  const rec={...makeRecordBase(value,recognized,rawSpeech,captureTs,confidence),duplicate,duplicateSeconds,suspiciousRepeat};
+  flashAccepted(value,confidence,!recognized||value==="ムリ");records.unshift(rec);if(cfg.endpoint)sendQueue.push(rec);save();render();processQueue();if(suspiciousRepeat)$("status").textContent=`⚠ ${value}：${duplicateSeconds}秒前にも受付（重複候補）`;
   else if(duplicate)$("status").textContent=`△ ${value}：過去にも受付あり（${duplicateSeconds}秒前）`;
 }
 function showRecognitionRaw(s){ lastSpeech=s||"（空）";if($("rawSpeechValue"))$("rawSpeechValue").textContent=lastSpeech; }
