@@ -115,6 +115,19 @@ function renderStartFlow(){
 
 
 let flashTimer=0;
+
+function flashPackAccepted(values,confidence=0){
+  if(!raceLiveMode||!values||values.length<2)return;
+  const box=$("v31Flash"),no=$("v31FlashNo"),meta=$("v31FlashMeta");if(!box||!no||!meta)return;
+  clearTimeout(flashTimer);
+  const low=Number(confidence)>0&&Number(confidence)<0.45;
+  box.className="v31Flash show"+(low?" warn":"");
+  no.style.fontSize=values.length>=5?"min(16vw,82px)":values.length>=3?"min(20vw,105px)":"min(26vw,135px)";
+  no.textContent=values.join(" → ");
+  meta.textContent=low?`⚠ 集団 ${values.length}人・認識注意 ${Math.round(Number(confidence)*100)}%`:`✓ 集団受付 ${values.length}人`;
+  flashTimer=setTimeout(()=>{box.className="v31Flash";no.style.fontSize="";},1100);
+}
+
 function flashAccepted(value,confidence=0,isMuri=false){
   if(!raceLiveMode)return;
   const box=$("v31Flash"),no=$("v31FlashNo"),meta=$("v31FlashMeta");if(!box||!no||!meta)return;
@@ -251,6 +264,7 @@ function addPack(values,rawSpeech,captureTs,confidence=0){
   if(unique.length<2)return false;
   const base=Number(captureTs)||Date.now();
   unique.forEach((v,i)=>add(v,true,rawSpeech,base+i*250,confidence));
+  flashPackAccepted(unique,confidence);
   $("status").textContent=`集団受付：${unique.length}人（${unique.join("・")}）`;
   return true;
 }
