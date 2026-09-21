@@ -1,4 +1,4 @@
-const CACHE = "taikai-voice-v30-version7";
+const CACHE = "lap-number-v31-dev1";
 
 self.addEventListener("install", event => {
   event.waitUntil(
@@ -7,9 +7,9 @@ self.addEventListener("install", event => {
         "./",
         "./index.html",
         "./style.css?v=29r3",
-        "./app/app.js?v=26",
+        "./app/app.js?v=31d1",
         "./app/restore.js?v=30r7",
-        "./app/reliable.js?v=30r5",
+        "./app/reliable.js?v=31d1",
         "./manifest.json"
       ]))
       .then(() => self.skipWaiting())
