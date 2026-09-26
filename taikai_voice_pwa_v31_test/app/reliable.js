@@ -68,6 +68,7 @@
         reject(new Error('network'));
       };
 
+      // GAS Webアプリは長いGET(JSONP)で失敗することがあるため、診断用URLを保持
       script.src=endpoint+(endpoint.includes('?')?'&':'?')+params.toString();
       document.body.appendChild(script);
     });
@@ -89,7 +90,13 @@
           render();
           await new Promise(r=>setTimeout(r,40));
         }catch(e){
-          // キューを残したまま次回再送
+          // キューを残したまま次回再送。原因を画面にも出して現場で切り分け可能にする。
+          try{
+            const s=document.getElementById('status');
+            if(s) s.textContent=`送信エラー(${e&&e.message?e.message:'unknown'}) ⚠未送信${sendQueue.length}件`;
+            const a=document.getElementById('v31FieldAlertSub');
+            if(a) a.textContent=`GAS応答なし: ${e&&e.message?e.message:'unknown'} ／ 未送信 ${sendQueue.length}件`;
+          }catch{}
           break;
         }
       }
