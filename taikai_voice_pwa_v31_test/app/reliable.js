@@ -7,9 +7,19 @@
 (function setupReliableRecordTransport(){
   // V31専用送信ロック。旧app.jsのisSendingとは完全分離する。
   let reliableSending=false;
+  let diagSeq=0;
+  function diag(msg){
+    try{
+      const stamp=new Date().toLocaleTimeString('ja-JP',{hour12:false});
+      localStorage.setItem('lap_v31_send_diag',stamp+' '+msg);
+      const s=document.getElementById('status'); if(s)s.textContent='通信診断: '+msg;
+      const a=document.getElementById('v31FieldAlertSub'); if(a)a.textContent='通信診断: '+msg;
+    }catch{}
+  }
   function jsonpRecordSend(item){
     return new Promise((resolve,reject)=>{
       const endpoint=String(cfg.endpoint||'').trim();
+      const n=++diagSeq; diag(`#${n} GAS送信開始`);
       if(!endpoint){reject(new Error('endpoint'));return;}
 
       const cb='recordAck_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
@@ -46,7 +56,7 @@
         if(finished)return;
         finished=true;
         cleanup();
-        reject(new Error('timeout'));
+        diag(`#${n} ACKタイムアウト`); reject(new Error('timeout'));
       },15000);
 
       function cleanup(){
@@ -59,7 +69,7 @@
         if(finished)return;
         finished=true;
         cleanup();
-        if(res&&res.ok)resolve(res);
+        if(res&&res.ok){diag(`#${n} ACK受信 OK`);resolve(res);}
         else reject(new Error((res&&res.error)||'server'));
       };
 
@@ -67,7 +77,7 @@
         if(finished)return;
         finished=true;
         cleanup();
-        reject(new Error('network'));
+        diag(`#${n} script.onerror`); reject(new Error('network'));
       };
 
       // GAS Webアプリは長いGET(JSONP)で失敗することがあるため、診断用URLを保持
@@ -78,7 +88,11 @@
 
   // 既存processQueueを安定化版へ差し替え
   processQueue=async function(){
-    if(reliableSending||!sendQueue.length||!cfg.endpoint||!navigator.onLine)return;
+    if(reliableSending){diag('送信ロック中');return;}
+    if(!sendQueue.length)return;
+    if(!cfg.endpoint){diag('GAS URLなし');return;}
+    if(!navigator.onLine){diag('オフライン');return;}
+    diag(`キュー${sendQueue.length}件 → 送信処理開始`);
     reliableSending=true;
     try{
       while(sendQueue.length&&navigator.onLine){
@@ -88,6 +102,7 @@
           // サーバーから明示的にOKが返った時だけ削除
           if(!res||!res.ok)throw new Error('ack');
           sendQueue.shift();
+          diag(`登録成功 → 残り${sendQueue.length}件`);
           save();
           render();
           await new Promise(r=>setTimeout(r,40));
@@ -115,7 +130,7 @@
   // app.js 側から確実に安定化送信を呼べる専用入口。
   // app.js はレキシカルな旧 processQueue を保持するため、window 経由ではなく
   // reliable.js 自身の送信関数を直接公開する。
-  window.v31ReliableSend=()=>processQueue();
+  window.v31ReliableSend=()=>{diag(`新規受付トリガー / キュー${sendQueue.length}件`);return processQueue();};
   window.v31ProcessQueue=window.v31ReliableSend;
 
   // 未送信が残っていれば3秒ごとに再送
