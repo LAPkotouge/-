@@ -113,7 +113,10 @@
   };
 
   // app.js 側から確実に安定化送信を呼べる専用入口。
-  window.v31ProcessQueue=()=>processQueue();
+  // app.js はレキシカルな旧 processQueue を保持するため、window 経由ではなく
+  // reliable.js 自身の送信関数を直接公開する。
+  window.v31ReliableSend=()=>processQueue();
+  window.v31ProcessQueue=window.v31ReliableSend;
 
   // 未送信が残っていれば3秒ごとに再送
   setInterval(()=>{
