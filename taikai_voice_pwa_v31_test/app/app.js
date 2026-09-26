@@ -411,6 +411,7 @@ window.addEventListener("online",renderStartFlow);window.addEventListener("offli
     if(!navigator.onLine){alert("オフラインのため新規大会を作成できません。");return;}
 
     const filename=`${year}_${event}_記録データ`;
+    const relayGap=(document.getElementById("sRelayGap")?.value||"").trim();
     if(!confirm(`${filename}\n\n記録用スプレッドシートを新規作成し、共有大会マスタへ登録します。\nよろしいですか？`))return;
 
     btn.disabled=true;
@@ -422,7 +423,9 @@ window.addEventListener("online",renderStartFlow);window.addEventListener("offli
         year:String(year),
         event,
         date,
-        mode
+        mode,
+        relayGap,
+        endpoint
       });
       if(!res||!res.ok)throw new Error(res&&res.error?res.error:"作成に失敗しました");
       if(res.exists){
@@ -433,7 +436,8 @@ window.addEventListener("online",renderStartFlow);window.addEventListener("offli
         if(document.getElementById("profileYear"))document.getElementById("profileYear").value=year;
         if(document.getElementById("sharedYear"))document.getElementById("sharedYear").value=year;
         localStorage.setItem(MASTER_ID_KEY,masterId);
-        status.textContent=`✅ ${res.sheetName||filename} を作成しました。保存先IDを自動設定し、共有大会マスタへ登録しました。下の「保存」を押してこの端末の大会設定を確定してください。`;
+        status.textContent=`✅ ${res.sheetName||filename} を作成しました。保存先IDを自動設定し、共有大会マスタへ登録しました。端末設定も自動保存します。`;
+        document.getElementById("saveSettings")?.click();
       }
       setTimeout(()=>document.getElementById("refreshSharedMaster")?.click(),300);
     }catch(e){
