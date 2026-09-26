@@ -1,4 +1,4 @@
-const CACHE = "lap-number-v31-test1";
+const CACHE = "lap-number-v31-test2";
 
 self.addEventListener("install", event => {
   event.waitUntil(
@@ -7,9 +7,9 @@ self.addEventListener("install", event => {
         "./",
         "./index.html",
         "./style.css?v=29r3",
-        "./app/app.js?v=31d1",
+        "./app/app.js?v=31d2",
         "./app/restore.js?v=30r7",
-        "./app/reliable.js?v=31d1",
+        "./app/reliable.js?v=31d2",
         "./manifest.json"
       ]))
       .then(() => self.skipWaiting())
