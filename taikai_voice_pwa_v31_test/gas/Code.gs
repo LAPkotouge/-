@@ -30,7 +30,7 @@ function createEvent_(d){
   const masterId=String(d.masterId||"").trim(),year=String(d.year||"").trim(),event=String(d.event||"").trim(),date=String(d.date||"").trim(),mode=String(d.mode||"").trim();
   if(!masterId)throw new Error("共有マスタIDが未設定です"); if(!event)throw new Error("大会名が未設定です");
   const master=SpreadsheetApp.openById(masterId),ms=ensureMasterSheet_(master),vals=ms.getDataRange().getValues();
-  for(let i=1;i<vals.length;i++)if(String(vals[i][0])===year&&String(vals[i][1])===event)return {ok:true,exists:true,sheetId:String(vals[i][7]||""),sheetName:String(vals[i][1]||event)};
+  for(let i=1;i<vals.length;i++)if(String(vals[i][0])===year&&String(vals[i][1])===event)return {ok:true,exists:true,sheetId:String(vals[i][6]||""),sheetName:String(vals[i][1]||event)};
   const cleanEvent=event.replace(new RegExp("^"+year+"[ _　-]*"),"").trim()||event;
   const ss=SpreadsheetApp.create(year+"_"+cleanEvent+"_記録データ"),info=ss.getSheets()[0];info.setName("大会情報");
   info.getRange(1,1,5,2).setValues([["項目","内容"],["大会名",event],["開催日",date],["方式",mode],["作成日時",new Date()]]);
@@ -45,10 +45,17 @@ function ensureMasterSheet_(ss){
 }
 function masterSave_(d){
   const ss=SpreadsheetApp.openById(String(d.masterId||"").trim()),sh=ensureMasterSheet_(ss),year=String(d.year||""),event=String(d.event||""),vals=sh.getDataRange().getValues();
-  const sid=String(d.sheetId||"").trim(),link=sid?`=HYPERLINK("https://docs.google.com/spreadsheets/d/${sid}/edit","記録シートを開く")`:"";
-  const row=[year,event,d.date||"",d.mode||"",d.top||"",d.relayGap||"",sid,d.endpoint||"",new Date(),link];
-  for(let i=1;i<vals.length;i++)if(String(vals[i][0])===year&&String(vals[i][1])===event){sh.getRange(i+1,1,1,row.length).setValues([row]);return {ok:true,updated:true};}
-  sh.appendRow(row);return {ok:true,updated:false};
+  const sid=String(d.sheetId||"").trim(),row=[year,event,d.date||"",d.mode||"",d.top||"",d.relayGap||"",sid,d.endpoint||"",new Date(),""];
+  const matches=[];for(let i=1;i<vals.length;i++)if(String(vals[i][0])===year&&String(vals[i][1])===event)matches.push(i+1);
+  const target=matches.length?matches[0]:sh.getLastRow()+1;
+  sh.getRange(target,1,1,row.length).setValues([row]);
+  if(sid){
+    const url="https://docs.google.com/spreadsheets/d/"+sid+"/edit";
+    const rich=SpreadsheetApp.newRichTextValue().setText("記録シートを開く").setLinkUrl(url).build();
+    sh.getRange(target,10).setRichTextValue(rich);
+  }else sh.getRange(target,10).clearContent();
+  for(let i=matches.length-1;i>=1;i--)sh.deleteRow(matches[i]);
+  return {ok:true,updated:matches.length>0,deduplicated:Math.max(0,matches.length-1)};
 }
 function masterList_(d){
   const ss=SpreadsheetApp.openById(String(d.masterId||"").trim()),sh=ensureMasterSheet_(ss),v=sh.getDataRange().getValues(),year=String(d.year||"");
