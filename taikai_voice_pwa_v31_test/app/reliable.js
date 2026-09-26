@@ -16,82 +16,14 @@
       const a=document.getElementById('v31FieldAlertSub'); if(a)a.textContent='通信診断: '+msg;
     }catch{}
   }
-  function jsonpRecordSend(item){
-    return new Promise((resolve,reject)=>{
-      const endpoint=String(cfg.endpoint||'').trim();
-      const n=++diagSeq; diag(`#${n} GAS送信開始`);
-      if(!endpoint){reject(new Error('endpoint'));return;}
-
-      const cb='recordAck_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
-      const params=new URLSearchParams({
-        action:'RECORD_ADD',
-        callback:cb,
-        sheetId:String(item.sheetId||cfg.sheetId||''),
-        id:String(item.id||''),
-        seqNo:String(item.seqNo||''),
-        value:String(item.value||''),
-        recognized:item.recognized?'1':'0',
-        inputType:String(item.inputType||(item.recognized?'音声認識':'ボタン')),
-        invalidGap:item.invalidGap?'1':'0',
-        duplicate:item.duplicate?'1':'0',
-        duplicateSeconds:String(item.duplicateSeconds||''),
-        suspiciousRepeat:item.suspiciousRepeat?'1':'0',
-        lap:String(item.lap||''),
-        mode:String(item.mode||cfg.mode||''),
-        event:String(item.event||cfg.event||''),
-        date:String(item.date||cfg.date||''),
-        point:String(item.point||cfg.point||''),
-        staff:String(item.staff||cfg.staff||''),
-        time:String(item.time||''),
-        captureTs:String(item.captureTs||item.ts||''),
-        recognizedTs:String(item.recognizedTs||''),
-        recognitionDelayMs:String(item.recognitionDelayMs||''),
-        confidence:String(item.confidence||''),
-        recovery:item.recovery?'1':'0'
-      });
-
-      const script=document.createElement('script');
-      let finished=false;
-      const timer=setTimeout(()=>{
-        if(finished)return;
-        finished=true;
-        cleanup();
-        diag(`#${n} ACKタイムアウト`); reject(new Error('timeout'));
-      },15000);
-
-      function cleanup(){
-        clearTimeout(timer);
-        try{delete window[cb];}catch{}
-        script.remove();
-      }
-
-      window[cb]=res=>{
-        if(finished)return;
-        finished=true;
-        cleanup();
-        if(res&&res.ok){diag(`#${n} ACK受信 OK`);resolve(res);}
-        else reject(new Error((res&&res.error)||'server'));
-      };
-
-      script.onerror=()=>{
-        if(finished)return;
-        finished=true;
-        cleanup();
-        diag(`#${n} JSONP失敗 → POSTへ切替`);
-        // Android Chrome/GASでJSONP script読込が失敗する端末向け。
-        // no-cors POSTはレスポンス本文を読めないため、送信後に同じ記録IDを
-        // JSONPで照会/再送し、GAS側の記録ID重複防止をACK代わりに使う。
-        const body={action:'RECORD_ADD',sheetId:String(item.sheetId||cfg.sheetId||''),id:String(item.id||''),seqNo:String(item.seqNo||''),value:String(item.value||''),recognized:!!item.recognized,inputType:String(item.inputType||(item.recognized?'音声認識':'ボタン')),invalidGap:!!item.invalidGap,duplicate:!!item.duplicate,duplicateSeconds:item.duplicateSeconds||'',suspiciousRepeat:!!item.suspiciousRepeat,lap:item.lap||'',mode:item.mode||cfg.mode||'',event:item.event||cfg.event||'',date:item.date||cfg.date||'',point:item.point||cfg.point||'',staff:item.staff||cfg.staff||'',time:item.time||'',captureTs:item.captureTs||item.ts||'',recognizedTs:item.recognizedTs||'',recognitionDelayMs:item.recognitionDelayMs||'',confidence:item.confidence||'',recovery:!!item.recovery};
-        fetch(endpoint,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)})
-          .then(()=>{diag(`#${n} POST送信完了`);resolve({ok:true,postFallback:true});})
-          .catch(err=>{diag(`#${n} POST失敗`);reject(err||new Error('network'));});
-      };
-
-      // GAS Webアプリは長いGET(JSONP)で失敗することがあるため、診断用URLを保持
-      script.src=endpoint+(endpoint.includes('?')?'&':'?')+params.toString();
-      document.body.appendChild(script);
-    });
+  function postRecordSend(item){
+    const endpoint=String(cfg.endpoint||'').trim();
+    if(!endpoint)return Promise.reject(new Error('endpoint'));
+    const body={action:'RECORD_ADD',sheetId:String(item.sheetId||cfg.sheetId||''),id:String(item.id||''),seqNo:String(item.seqNo||''),value:String(item.value||''),recognized:!!item.recognized,inputType:String(item.inputType||(item.recognized?'音声認識':'ボタン')),invalidGap:!!item.invalidGap,duplicate:!!item.duplicate,duplicateSeconds:item.duplicateSeconds||'',suspiciousRepeat:!!item.suspiciousRepeat,lap:item.lap||'',mode:item.mode||cfg.mode||'',event:item.event||cfg.event||'',date:item.date||cfg.date||'',point:item.point||cfg.point||'',staff:item.staff||cfg.staff||'',time:item.time||'',captureTs:item.captureTs||item.ts||'',recognizedTs:item.recognizedTs||'',recognitionDelayMs:item.recognitionDelayMs||'',confidence:item.confidence||'',recovery:!!item.recovery};
+    diag('POST即時送信');
+    return fetch(endpoint,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)}).then(()=>({ok:true,post:true}));
   }
+
 
   // 既存processQueueを安定化版へ差し替え
   processQueue=async function(){
@@ -105,8 +37,8 @@
       while(sendQueue.length&&navigator.onLine){
         const item=sendQueue[0];
         try{
-          const res=await jsonpRecordSend({...item,sheetId:item.sheetId||cfg.sheetId||''});
-          // サーバーから明示的にOKが返った時だけ削除
+          const res=await postRecordSend({...item,sheetId:item.sheetId||cfg.sheetId||''});
+          // V31 realtime: POST dispatch完了でキューを進める。GAS側は記録IDで重複防止。
           if(!res||!res.ok)throw new Error('ack');
           sendQueue.shift();
           diag(`登録成功 → 残り${sendQueue.length}件`);
