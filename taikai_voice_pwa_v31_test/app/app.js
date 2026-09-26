@@ -216,7 +216,17 @@ function kanaDigitsToNumber(s){ let x=normalizeSpeech(s),out="",keys=Object.keys
 function jpToNumber(s){ let x=normalizeSpeech(s);Object.keys(jpRead).sort((a,b)=>b.length-a.length).forEach(k=>x=x.replaceAll(k,jpRead[k]));let total=0,section=0,num=0,has=false;for(const ch of x){if(jpDigit[ch]!==undefined){num=jpDigit[ch];has=true}else if(ch==="十"||ch==="百"||ch==="千"){section+=(num||1)*({十:10,百:100,千:1000}[ch]);num=0;has=true}else if(ch==="万"){section+=num;total+=section*10000;section=0;num=0;has=true}else return null}return has?total+section+num:null; }
 function digitTextToNumber(s){ const d=s.replace(/[^0-9]/g,"");if(!d)return null;const n=Number(d);return d&&n>=1&&n<=99999?n:null; }
 function parseNumber(raw){ const s=normalizeSpeech(raw); if(/むり|無理/i.test(s))return "MURI"; if(/キャンセル|きゃんせる|取り消し|とりけし|取消|戻す|もどす/.test(s))return "CANCEL"; if(cfg.mode==="EKIDEN"){let m=s.match(/(\d{1,4})-(\d{1,2})/);if(!m)m=s.match(/(\d{1,4}).{0,3}?(\d{1,2})区/);if(!m)m=s.match(/(\d{1,4})の(\d{1,2})/);if(!m)return null;const a=Number(m[1]),b=Number(m[2]);return a>=1&&a<=9999&&b>=1&&b<=25?`${a}-${b}`:null;} if(manMode){const n=digitTextToNumber(s)??kanaDigitsToNumber(s);return n&&n>=10000?String(n):null;} const candidates=[];const d=digitTextToNumber(s);if(d!==null)candidates.push({n:d,score:1});const kd=kanaDigitsToNumber(s);if(kd!==null)candidates.push({n:kd,score:8});const j=jpToNumber(s);if(j!==null)candidates.push({n:j,score:/万|千|百|十/.test(s)?10:2});candidates.sort((a,b)=>b.score-a.score);for(const c of candidates)if(c.n>=1&&c.n<=99999)return String(c.n);return null; }
-function relayLast(value){ return records.find(r=>!r.cancelled&&!r.invalidGap&&r.mode==="RELAY"&&r.value===value); }
+function relayLast(value){
+  // V31: old records may have been created before mode was stored consistently.
+  // For relay reception, find the latest valid same-number record in the current event/point.
+  const target=String(value);
+  return records.find(r=>{
+    if(r.cancelled||r.invalidGap||!r.recognized||String(r.value)!==target)return false;
+    if(r.event&&cfg.event&&r.event!==cfg.event)return false;
+    if(r.point&&cfg.point&&r.point!==cfg.point)return false;
+    return true;
+  })||null;
+}
 function timeFromTs(ts){ return new Date(ts||Date.now()).toLocaleTimeString("ja-JP",{hour12:false}); }
 function makeRecordBase(value,recognized,rawSpeech,captureTs,confidence=0){
   const recognizedTs=Date.now(), acceptedTs=Number(captureTs)||recognizedTs;
@@ -225,7 +235,7 @@ function makeRecordBase(value,recognized,rawSpeech,captureTs,confidence=0){
 
 function add(value,recognized=true,rawSpeech="",captureTs=0,confidence=0){
   if(rawSpeech)lastSpeech=rawSpeech;
-  if(cfg.mode==="RELAY"&&recognized){const prev=relayLast(value);if(prev){const currentTs=Number(captureTs)||Date.now(),prevTs=Number(prev.captureTs)||Number(prev.ts)||0,diff=Math.max(0,(currentTs-prevTs)/1000);if(diff<cfg.relayGap*60){const rec={...makeRecordBase(value,true,rawSpeech,captureTs,confidence),invalidGap:true,invalidSeconds:Math.round(diff),duplicate:true,duplicateSeconds:Math.round(diff),suspiciousRepeat:true,lap:prev.lap};records.unshift(rec);if(cfg.endpoint)sendQueue.push(rec);save();render();processQueue();$("status").textContent=`⚠ ${value}：${Math.round(diff)}秒差・時差重複（${prev.lap||1}周目のまま）`;return;}}const lap=prev?(Number(prev.lap)||1)+1:1;const rec={...makeRecordBase(value,true,rawSpeech,captureTs,confidence),duplicate:false,lap};records.unshift(rec);if(cfg.endpoint)sendQueue.push(rec);save();render();processQueue();return;}
+  if(cfg.mode==="RELAY"&&recognized){const prev=relayLast(value);if(prev){const currentTs=Number(captureTs)||Date.now(),prevTs=Number(prev.captureTs)||Number(prev.ts)||0,diff=Math.max(0,(currentTs-prevTs)/1000);if(diff<=cfg.relayGap*60){const rec={...makeRecordBase(value,true,rawSpeech,captureTs,confidence),invalidGap:true,invalidSeconds:Math.round(diff),duplicate:true,duplicateSeconds:Math.round(diff),suspiciousRepeat:true,lap:prev.lap};records.unshift(rec);if(cfg.endpoint)sendQueue.push(rec);save();render();processQueue();$("status").textContent=`⚠ ${value}：${Math.round(diff)}秒差・時差重複（${prev.lap||1}周目のまま）`;return;}}const lap=prev?(Number(prev.lap)||1)+1:1;const rec={...makeRecordBase(value,true,rawSpeech,captureTs,confidence),duplicate:false,lap};records.unshift(rec);if(cfg.endpoint)sendQueue.push(rec);save();render();processQueue();return;}
   const previous=recognized?records.find(r=>!r.cancelled&&!r.invalidGap&&r.recognized&&r.value===value):null;
   const duplicate=!!previous;
   const duplicateSeconds=previous?Math.max(0,Math.round(((Number(captureTs)||Date.now())-(Number(previous.captureTs)||Number(previous.ts)||0))/1000)):0;
@@ -350,7 +360,7 @@ window.addEventListener("online",renderStartFlow);window.addEventListener("offli
 // V30：大会別記録スプレッドシート自動作成
 // =====================================================
 (function setupV30(){
-  const VERSION_TEXT="LAP NUMBER　V＝３１ DEV";
+  const VERSION_TEXT="LAP NUMBER　V＝３１ DEV r2";
   const MASTER_ID_KEY="taikai_voice_shared_master_id_v1";
 
   const style=document.createElement("style");
