@@ -102,6 +102,11 @@
       }
     }finally{
       isSending=false;
+      // 送信完了直後に新規受付が追加された競合を取りこぼさない。
+      // キューが残っていれば短時間後に必ず次の送信処理を起動する。
+      if(sendQueue.length&&navigator.onLine){
+        setTimeout(()=>processQueue(),120);
+      }
     }
   };
 
