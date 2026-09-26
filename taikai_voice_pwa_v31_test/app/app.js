@@ -410,7 +410,8 @@ window.addEventListener("online",renderStartFlow);window.addEventListener("offli
     if(!endpoint){alert("Google Apps Script URLを入力してください。");return;}
     if(!navigator.onLine){alert("オフラインのため新規大会を作成できません。");return;}
 
-    const filename=`${year}_${event}_記録データ`;
+    const cleanEvent=event.replace(new RegExp("^"+year+"[ _　-]*"),"").trim()||event;
+    const filename=`${year}_${cleanEvent}_記録データ`;
     const relayGap=(document.getElementById("sRelayGap")?.value||"").trim();
     if(!confirm(`${filename}\n\n記録用スプレッドシートを新規作成し、共有大会マスタへ登録します。\nよろしいですか？`))return;
 
