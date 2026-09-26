@@ -19,6 +19,8 @@
         seqNo:String(item.seqNo||''),
         value:String(item.value||''),
         recognized:item.recognized?'1':'0',
+        inputType:String(item.inputType||(item.recognized?'音声認識':'ボタン')),
+        invalidGap:item.invalidGap?'1':'0',
         duplicate:item.duplicate?'1':'0',
         duplicateSeconds:String(item.duplicateSeconds||''),
         suspiciousRepeat:item.suspiciousRepeat?'1':'0',
