@@ -389,20 +389,51 @@ window.addEventListener("online",renderStartFlow);window.addEventListener("offli
   `;
   sharedBox.parentNode.insertBefore(box,sharedBox);
 
-  function jsonpCreate(params){
+  // V31: CREATE_EVENT is sent by POST, then MASTER_LIST is polled by a short JSONP GET.
+  // This avoids Android Chrome failures seen with the long CREATE_EVENT JSONP URL.
+  function jsonpMasterList(endpoint,masterId,year){
     return new Promise((resolve,reject)=>{
-      const endpoint=(document.getElementById("sEndpoint")?.value||cfg.endpoint||"").trim();
-      if(!endpoint){reject(new Error("Google Apps Script URLが未設定です"));return;}
-      const cb="createEventCb_"+Date.now()+"_"+Math.random().toString(36).slice(2,6);
-      const qs=new URLSearchParams({...params,callback:cb});
+      const cb="lapMasterCb_"+Date.now()+"_"+Math.random().toString(36).slice(2,6);
+      const qs=new URLSearchParams({action:"MASTER_LIST",masterId,year:String(year||""),callback:cb,_:String(Date.now())});
       const script=document.createElement("script");
-      const timer=setTimeout(()=>{cleanup();reject(new Error("timeout"));},30000);
+      const timer=setTimeout(()=>{cleanup();reject(new Error("timeout"));},15000);
       function cleanup(){clearTimeout(timer);try{delete window[cb];}catch{}script.remove();}
       window[cb]=data=>{cleanup();resolve(data);};
       script.onerror=()=>{cleanup();reject(new Error("network"));};
+      script.async=true;
       script.src=endpoint+(endpoint.includes("?")?"&":"?")+qs.toString();
-      document.body.appendChild(script);
+      document.head.appendChild(script);
     });
+  }
+
+  async function createEventViaPost(params){
+    const endpoint=(document.getElementById("sEndpoint")?.value||cfg.endpoint||"").trim();
+    if(!endpoint)throw new Error("Google Apps Script URLが未設定です");
+
+    await fetch(endpoint,{
+      method:"POST",
+      mode:"no-cors",
+      cache:"no-store",
+      headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body:JSON.stringify({...params,action:"CREATE_EVENT"})
+    });
+
+    // GAS may still be creating the spreadsheet after the POST dispatch returns.
+    // Poll the shared master until the new event appears.
+    let lastError=null;
+    for(let attempt=0;attempt<12;attempt++){
+      if(attempt)await new Promise(r=>setTimeout(r,1000));
+      try{
+        const res=await jsonpMasterList(endpoint,params.masterId,params.year);
+        if(res&&res.ok&&Array.isArray(res.items)){
+          const found=res.items.find(x=>String(x.year||"")===String(params.year||"")&&String(x.event||"")===String(params.event||""));
+          if(found&&found.sheetId){
+            return {ok:true,exists:attempt===0,sheetId:String(found.sheetId),sheetName:String(found.event||params.event||""),url:"https://docs.google.com/spreadsheets/d/"+String(found.sheetId)+"/edit"};
+          }
+        }
+      }catch(e){lastError=e;}
+    }
+    throw lastError||new Error("作成結果を共有大会マスタで確認できませんでした");
   }
 
   async function createEventSpreadsheetV30(){
@@ -429,7 +460,7 @@ window.addEventListener("online",renderStartFlow);window.addEventListener("offli
     btn.disabled=true;
     status.textContent="新規大会を作成中… Googleドライブと共有大会マスタを確認しています。";
     try{
-      const res=await jsonpCreate({
+      const res=await createEventViaPost({
         action:"CREATE_EVENT",
         masterId,
         year:String(year),
@@ -453,7 +484,7 @@ window.addEventListener("online",renderStartFlow);window.addEventListener("offli
       }
       setTimeout(()=>document.getElementById("refreshSharedMaster")?.click(),300);
     }catch(e){
-      status.textContent=`❌ 新規大会を作成できませんでした：${e.message||e}。Apps ScriptをV30対応版へ更新・再デプロイしたか確認してください。`;
+      status.textContent=`❌ 新規大会を作成できませんでした：${e.message||e}。Apps Script V5・共有大会マスタID・通信状態を確認してください。`;
     }finally{
       btn.disabled=false;
     }
