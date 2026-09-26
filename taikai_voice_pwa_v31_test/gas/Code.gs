@@ -31,20 +31,22 @@ function createEvent_(d){
   if(!masterId)throw new Error("共有マスタIDが未設定です"); if(!event)throw new Error("大会名が未設定です");
   const master=SpreadsheetApp.openById(masterId),ms=ensureMasterSheet_(master),vals=ms.getDataRange().getValues();
   for(let i=1;i<vals.length;i++)if(String(vals[i][0])===year&&String(vals[i][1])===event)return {ok:true,exists:true,sheetId:String(vals[i][7]||""),sheetName:String(vals[i][1]||event)};
-  const ss=SpreadsheetApp.create(year+"_"+event+"_記録データ"),info=ss.getSheets()[0];info.setName("大会情報");
+  const cleanEvent=event.replace(new RegExp("^"+year+"[ _　-]*"),"").trim()||event;
+  const ss=SpreadsheetApp.create(year+"_"+cleanEvent+"_記録データ"),info=ss.getSheets()[0];info.setName("大会情報");
   info.getRange(1,1,5,2).setValues([["項目","内容"],["大会名",event],["開催日",date],["方式",mode],["作成日時",new Date()]]);
   masterSave_({masterId,year,event,date,mode,top:"",relayGap:d.relayGap||"",sheetId:ss.getId(),endpoint:d.endpoint||""});
   return {ok:true,exists:false,sheetId:ss.getId(),sheetName:ss.getName(),url:ss.getUrl()};
 }
 function ensureMasterSheet_(ss){
   let sh=ss.getSheetByName("大会マスタ");if(!sh)sh=ss.insertSheet("大会マスタ");
-  const h=["年","大会名","開催日","方式","TOP予想","周回差","保存先スプレッドシートID","Apps Script URL","更新日時"];
+  const h=["年","大会名","開催日","方式","TOP予想","周回差","保存先スプレッドシートID","Apps Script URL","更新日時","記録データ"];
   if(sh.getLastRow()===0)sh.getRange(1,1,1,h.length).setValues([h]);
   return sh;
 }
 function masterSave_(d){
   const ss=SpreadsheetApp.openById(String(d.masterId||"").trim()),sh=ensureMasterSheet_(ss),year=String(d.year||""),event=String(d.event||""),vals=sh.getDataRange().getValues();
-  const row=[year,event,d.date||"",d.mode||"",d.top||"",d.relayGap||"",d.sheetId||"",d.endpoint||"",new Date()];
+  const sid=String(d.sheetId||"").trim(),link=sid?`=HYPERLINK("https://docs.google.com/spreadsheets/d/${sid}/edit","記録シートを開く")`:"";
+  const row=[year,event,d.date||"",d.mode||"",d.top||"",d.relayGap||"",sid,d.endpoint||"",new Date(),link];
   for(let i=1;i<vals.length;i++)if(String(vals[i][0])===year&&String(vals[i][1])===event){sh.getRange(i+1,1,1,row.length).setValues([row]);return {ok:true,updated:true};}
   sh.appendRow(row);return {ok:true,updated:false};
 }
