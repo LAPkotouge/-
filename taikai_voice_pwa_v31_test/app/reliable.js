@@ -110,6 +110,9 @@
     }
   };
 
+  // app.js 側から確実に安定化送信を呼べる専用入口。
+  window.v31ProcessQueue=()=>processQueue();
+
   // 未送信が残っていれば3秒ごとに再送
   setInterval(()=>{
     if(sendQueue.length&&navigator.onLine)processQueue();
