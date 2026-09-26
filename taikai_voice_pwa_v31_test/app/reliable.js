@@ -77,7 +77,14 @@
         if(finished)return;
         finished=true;
         cleanup();
-        diag(`#${n} script.onerror`); reject(new Error('network'));
+        diag(`#${n} JSONP失敗 → POSTへ切替`);
+        // Android Chrome/GASでJSONP script読込が失敗する端末向け。
+        // no-cors POSTはレスポンス本文を読めないため、送信後に同じ記録IDを
+        // JSONPで照会/再送し、GAS側の記録ID重複防止をACK代わりに使う。
+        const body={action:'RECORD_ADD',sheetId:String(item.sheetId||cfg.sheetId||''),id:String(item.id||''),seqNo:String(item.seqNo||''),value:String(item.value||''),recognized:!!item.recognized,inputType:String(item.inputType||(item.recognized?'音声認識':'ボタン')),invalidGap:!!item.invalidGap,duplicate:!!item.duplicate,duplicateSeconds:item.duplicateSeconds||'',suspiciousRepeat:!!item.suspiciousRepeat,lap:item.lap||'',mode:item.mode||cfg.mode||'',event:item.event||cfg.event||'',date:item.date||cfg.date||'',point:item.point||cfg.point||'',staff:item.staff||cfg.staff||'',time:item.time||'',captureTs:item.captureTs||item.ts||'',recognizedTs:item.recognizedTs||'',recognitionDelayMs:item.recognitionDelayMs||'',confidence:item.confidence||'',recovery:!!item.recovery};
+        fetch(endpoint,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)})
+          .then(()=>{diag(`#${n} POST送信完了`);resolve({ok:true,postFallback:true});})
+          .catch(err=>{diag(`#${n} POST失敗`);reject(err||new Error('network'));});
       };
 
       // GAS Webアプリは長いGET(JSONP)で失敗することがあるため、診断用URLを保持
