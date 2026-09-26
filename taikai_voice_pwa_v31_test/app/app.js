@@ -390,29 +390,24 @@ window.addEventListener("online",renderStartFlow);window.addEventListener("offli
   sharedBox.parentNode.insertBefore(box,sharedBox);
 
   // V31 / GAS V7 iframe bridge: no dynamic JSONP.
-  function gasIframeBridgeV31(endpoint,op,params){
+  function jsonpCreateV31(params){
     return new Promise((resolve,reject)=>{
-      const nonce="event_"+Date.now()+"_"+Math.random().toString(36).slice(2,10);
-      const u=new URL(endpoint);
-      u.searchParams.set("action","BRIDGE_PAGE");
-      u.searchParams.set("nonce",nonce);
-      u.searchParams.set("op",op);
-      Object.entries(params||{}).forEach(([k,v])=>{if(v!=null)u.searchParams.set(k,String(v));});
-      const frame=document.createElement("iframe");
-      frame.style.display="none";
-      const timer=setTimeout(()=>{cleanup();reject(new Error("bridge timeout"));},25000);
-      function cleanup(){clearTimeout(timer);window.removeEventListener("message",onMsg);frame.remove();}
-      function onMsg(ev){const d=ev.data;if(!d||d.lapNumberBridge!==true||d.nonce!==nonce)return;cleanup();if(d.payload&&d.payload.ok===false)reject(new Error(d.payload.error||"bridge error"));else resolve(d.payload);}
-      window.addEventListener("message",onMsg);
-      frame.src=u.toString();
-      document.body.appendChild(frame);
+      const endpoint=(document.getElementById("sEndpoint")?.value||cfg.endpoint||"").trim();
+      if(!endpoint){reject(new Error("Google Apps Script URLが未設定です"));return;}
+      const cb="createEventCb_"+Date.now()+"_"+Math.random().toString(36).slice(2,6);
+      const qs=new URLSearchParams({...params,callback:cb,_t:String(Date.now())});
+      const script=document.createElement("script");
+      const timer=setTimeout(()=>{cleanup();reject(new Error("timeout"));},30000);
+      function cleanup(){clearTimeout(timer);try{delete window[cb];}catch{}script.remove();}
+      window[cb]=data=>{cleanup();resolve(data);};
+      script.onerror=()=>{cleanup();reject(new Error("network"));};
+      script.src=endpoint+(endpoint.includes("?")?"&":"?")+qs.toString();
+      document.body.appendChild(script);
     });
   }
 
   async function createEventViaPost(params){
-    const endpoint=(document.getElementById("sEndpoint")?.value||cfg.endpoint||"").trim();
-    if(!endpoint)throw new Error("Google Apps Script URLが未設定です");
-    return await gasIframeBridgeV31(endpoint,"CREATE_EVENT",params);
+    return await jsonpCreateV31(params);
   }
 
   async function createEventSpreadsheetV30(){
