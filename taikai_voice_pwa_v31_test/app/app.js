@@ -71,7 +71,8 @@ function renderHistory(){
   const active=records.filter(r=>!r.cancelled).slice(0,6);
   h.innerHTML=active.map(r=>{
     let tag="";
-    if(r.mode==="RELAY"&&r.lap) tag=`<span class="historyTag relayTag">${esc(r.lap)}周目</span>`;
+    if(r.mode==="RELAY"&&r.invalidGap) tag='<span class="historyTag duplicateTag">時差重複</span>';
+    else if(r.mode==="RELAY"&&r.lap) tag=`<span class="historyTag relayTag">${esc(r.lap)}周目</span>`;
     else if(r.suspiciousRepeat) tag='<span class="historyTag duplicateTag">重複候補</span>';
     else if(r.duplicate) tag='<span class="historyTag duplicateTag">再登場</span>';
     else if(r.invalidGap) tag='<span class="historyTag invalidTag">無効</span>';
@@ -224,7 +225,7 @@ function makeRecordBase(value,recognized,rawSpeech,captureTs,confidence=0){
 
 function add(value,recognized=true,rawSpeech="",captureTs=0,confidence=0){
   if(rawSpeech)lastSpeech=rawSpeech;
-  if(cfg.mode==="RELAY"&&recognized){const prev=relayLast(value);if(prev){const diff=(Date.now()-prev.ts)/1000;if(diff<cfg.relayGap*60){const rec={...makeRecordBase(value,true,rawSpeech,captureTs,confidence),invalidGap:true,invalidSeconds:Math.round(diff),lap:prev.lap};records.unshift(rec);save();render();$("status").textContent=`⚠ ${value}：${cfg.relayGap}分未満なので無効`;return;}}const lap=prev?(Number(prev.lap)||1)+1:1;const rec={...makeRecordBase(value,true,rawSpeech,captureTs,confidence),duplicate:false,lap};records.unshift(rec);if(cfg.endpoint)sendQueue.push(rec);save();render();processQueue();return;}
+  if(cfg.mode==="RELAY"&&recognized){const prev=relayLast(value);if(prev){const currentTs=Number(captureTs)||Date.now(),prevTs=Number(prev.captureTs)||Number(prev.ts)||0,diff=Math.max(0,(currentTs-prevTs)/1000);if(diff<cfg.relayGap*60){const rec={...makeRecordBase(value,true,rawSpeech,captureTs,confidence),invalidGap:true,invalidSeconds:Math.round(diff),duplicate:true,duplicateSeconds:Math.round(diff),suspiciousRepeat:true,lap:prev.lap};records.unshift(rec);if(cfg.endpoint)sendQueue.push(rec);save();render();processQueue();$("status").textContent=`⚠ ${value}：${Math.round(diff)}秒差・時差重複（${prev.lap||1}周目のまま）`;return;}}const lap=prev?(Number(prev.lap)||1)+1:1;const rec={...makeRecordBase(value,true,rawSpeech,captureTs,confidence),duplicate:false,lap};records.unshift(rec);if(cfg.endpoint)sendQueue.push(rec);save();render();processQueue();return;}
   const previous=recognized?records.find(r=>!r.cancelled&&!r.invalidGap&&r.recognized&&r.value===value):null;
   const duplicate=!!previous;
   const duplicateSeconds=previous?Math.max(0,Math.round(((Number(captureTs)||Date.now())-(Number(previous.captureTs)||Number(previous.ts)||0))/1000)):0;
