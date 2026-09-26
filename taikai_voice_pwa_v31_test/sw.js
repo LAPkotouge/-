@@ -1,11 +1,9 @@
-const CACHE = "lap-number-v31-v7diag1";
+const CACHE = "lap-number-v31-v7diag2";
 
 self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE)
       .then(cache => cache.addAll([
-        "./",
-        "./index.html",
         "./style.css?v=29r3",
         "./app/app.js?v=31v7diag1",
         "./app/restore.js?v=30r7",
@@ -27,6 +25,13 @@ self.addEventListener("activate", event => {
 });
 
 self.addEventListener("fetch", event => {
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request, {cache:"no-store"})
+        .catch(() => caches.match("./index.html"))
+    );
+    return;
+  }
   event.respondWith(
     caches.match(event.request).then(response => response || fetch(event.request))
   );
