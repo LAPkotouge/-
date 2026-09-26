@@ -390,24 +390,19 @@ window.addEventListener("online",renderStartFlow);window.addEventListener("offli
   sharedBox.parentNode.insertBefore(box,sharedBox);
 
   // V31 / GAS V7 iframe bridge: no dynamic JSONP.
-  function jsonpCreateV31(params){
-    return new Promise((resolve,reject)=>{
-      const endpoint=(document.getElementById("sEndpoint")?.value||cfg.endpoint||"").trim();
-      if(!endpoint){reject(new Error("Google Apps Script URLが未設定です"));return;}
-      const cb="createEventCb_"+Date.now()+"_"+Math.random().toString(36).slice(2,6);
-      const qs=new URLSearchParams({...params,callback:cb,_t:String(Date.now())});
-      const script=document.createElement("script");
-      const timer=setTimeout(()=>{cleanup();reject(new Error("timeout"));},30000);
-      function cleanup(){clearTimeout(timer);try{delete window[cb];}catch{}script.remove();}
-      window[cb]=data=>{cleanup();resolve(data);};
-      script.onerror=()=>{cleanup();reject(new Error("network"));};
-      script.src=endpoint+(endpoint.includes("?")?"&":"?")+qs.toString();
-      document.body.appendChild(script);
-    });
-  }
-
   async function createEventViaPost(params){
-    return await jsonpCreateV31(params);
+    const endpoint=(document.getElementById("sEndpoint")?.value||cfg.endpoint||"").trim();
+    if(!endpoint)throw new Error("Google Apps Script URLが未設定です");
+    // Android Chromeで確実にGASへ到達させる一方向POST。
+    // text/plain は no-cors のCORS-safelisted Content-Typeなのでpreflightを発生させない。
+    await fetch(endpoint,{
+      method:"POST",
+      mode:"no-cors",
+      headers:{"Content-Type":"text/plain;charset=UTF-8"},
+      body:JSON.stringify(params),
+      cache:"no-store"
+    });
+    return {ok:true,queued:true};
   }
 
   async function createEventSpreadsheetV30(){
@@ -444,22 +439,15 @@ window.addEventListener("online",renderStartFlow);window.addEventListener("offli
         relayGap,
         endpoint
       });
-      if(!res||!res.ok)throw new Error(res&&res.error?res.error:"作成に失敗しました");
-      if(res.exists){
-        status.textContent=`⚠ ${year}｜${event} は既に共有大会マスタに登録されています。新しいスプレッドシートは作成していません。`;
-        if(res.sheetId)document.getElementById("sSheetId").value=res.sheetId;
-      }else{
-        document.getElementById("sSheetId").value=res.sheetId||"";
-        if(document.getElementById("profileYear"))document.getElementById("profileYear").value=year;
-        if(document.getElementById("sharedYear"))document.getElementById("sharedYear").value=year;
-        localStorage.setItem(MASTER_ID_KEY,masterId);
-        localStorage.setItem("lap_number_active_master_id",masterId);
-        status.textContent=`✅ ${res.sheetName||filename} を作成しました。保存先IDを自動設定し、共有大会マスタへ登録しました。`;
-        document.getElementById("saveSettings")?.click();
-      }
-      setTimeout(()=>document.getElementById("refreshSharedMaster")?.click(),300);
+      if(document.getElementById("profileYear"))document.getElementById("profileYear").value=year;
+      if(document.getElementById("sharedYear"))document.getElementById("sharedYear").value=year;
+      localStorage.setItem(MASTER_ID_KEY,masterId);
+      localStorage.setItem("lap_number_active_master_id",masterId);
+      document.getElementById("sSheetId").value="";
+      status.textContent=`✅ ${filename} の作成要求をGASへ送信しました。V13ではGASが記録シート作成→共有大会マスタ登録をサーバー側で完結します。`;
+      document.getElementById("saveSettings")?.click();
     }catch(e){
-      status.textContent=`❌ 新規大会を作成できませんでした：${e.message||e}。共有大会マスタID・GAS URL・通信状態を確認してください。`;
+      status.textContent=`❌ GASへの大会作成要求を送信できませんでした：${e.message||e}。共有大会マスタID・GAS URL・通信状態を確認してください。`;
     }finally{
       btn.disabled=false;
     }
