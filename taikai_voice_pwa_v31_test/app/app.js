@@ -389,43 +389,30 @@ window.addEventListener("online",renderStartFlow);window.addEventListener("offli
   `;
   sharedBox.parentNode.insertBefore(box,sharedBox);
 
-  // V31 / GAS V6 bridge: POST request + short request-id JSONP result.
-  function bridgeResultV31(endpoint,requestId){
+  // V31 / GAS V7 iframe bridge: no dynamic JSONP.
+  function gasIframeBridgeV31(endpoint,op,params){
     return new Promise((resolve,reject)=>{
-      const cb="eventBridgeCb_"+Date.now()+"_"+Math.random().toString(36).slice(2,6);
-      const qs=new URLSearchParams({action:"BRIDGE_RESULT",requestId,callback:cb,_:String(Date.now())});
-      const script=document.createElement("script");
-      const timer=setTimeout(()=>{cleanup();reject(new Error("timeout"));},12000);
-      function cleanup(){clearTimeout(timer);try{delete window[cb];}catch{}script.remove();}
-      window[cb]=data=>{cleanup();resolve(data);};
-      script.onerror=()=>{cleanup();reject(new Error("network"));};
-      script.async=true;
-      script.src=endpoint+(endpoint.includes("?")?"&":"?")+qs.toString();
-      document.head.appendChild(script);
+      const nonce="event_"+Date.now()+"_"+Math.random().toString(36).slice(2,10);
+      const u=new URL(endpoint);
+      u.searchParams.set("action","BRIDGE_PAGE");
+      u.searchParams.set("nonce",nonce);
+      u.searchParams.set("op",op);
+      Object.entries(params||{}).forEach(([k,v])=>{if(v!=null)u.searchParams.set(k,String(v));});
+      const frame=document.createElement("iframe");
+      frame.style.display="none";
+      const timer=setTimeout(()=>{cleanup();reject(new Error("bridge timeout"));},25000);
+      function cleanup(){clearTimeout(timer);window.removeEventListener("message",onMsg);frame.remove();}
+      function onMsg(ev){const d=ev.data;if(!d||d.lapNumberBridge!==true||d.nonce!==nonce)return;cleanup();if(d.payload&&d.payload.ok===false)reject(new Error(d.payload.error||"bridge error"));else resolve(d.payload);}
+      window.addEventListener("message",onMsg);
+      frame.src=u.toString();
+      document.body.appendChild(frame);
     });
   }
 
   async function createEventViaPost(params){
     const endpoint=(document.getElementById("sEndpoint")?.value||cfg.endpoint||"").trim();
     if(!endpoint)throw new Error("Google Apps Script URLが未設定です");
-    const requestId="event_"+Date.now()+"_"+Math.random().toString(36).slice(2,10);
-    await fetch(endpoint,{
-      method:"POST",mode:"no-cors",cache:"no-store",
-      headers:{"Content-Type":"text/plain;charset=utf-8"},
-      body:JSON.stringify({action:"BRIDGE_REQUEST",requestId,op:"CREATE_EVENT",payload:params})
-    });
-    let last=null;
-    for(let i=0;i<20;i++){
-      if(i)await new Promise(r=>setTimeout(r,700));
-      try{
-        const r=await bridgeResultV31(endpoint,requestId);
-        if(r&&r.pending)continue;
-        if(r&&r.ok===false&&r.bridgeError)throw new Error(r.error||"bridge error");
-        if(r&&r.ready)return r.result;
-        last=r;
-      }catch(e){last=e;}
-    }
-    throw(last instanceof Error?last:new Error("大会作成結果を取得できませんでした"));
+    return await gasIframeBridgeV31(endpoint,"CREATE_EVENT",params);
   }
 
   async function createEventSpreadsheetV30(){
