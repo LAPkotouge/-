@@ -389,14 +389,13 @@ window.addEventListener("online",renderStartFlow);window.addEventListener("offli
   `;
   sharedBox.parentNode.insertBefore(box,sharedBox);
 
-  // V31: CREATE_EVENT is sent by POST, then MASTER_LIST is polled by a short JSONP GET.
-  // This avoids Android Chrome failures seen with the long CREATE_EVENT JSONP URL.
-  function jsonpMasterList(endpoint,masterId,year){
+  // V31 / GAS V6 bridge: POST request + short request-id JSONP result.
+  function bridgeResultV31(endpoint,requestId){
     return new Promise((resolve,reject)=>{
-      const cb="lapMasterCb_"+Date.now()+"_"+Math.random().toString(36).slice(2,6);
-      const qs=new URLSearchParams({action:"MASTER_LIST",masterId,year:String(year||""),callback:cb,_:String(Date.now())});
+      const cb="eventBridgeCb_"+Date.now()+"_"+Math.random().toString(36).slice(2,6);
+      const qs=new URLSearchParams({action:"BRIDGE_RESULT",requestId,callback:cb,_:String(Date.now())});
       const script=document.createElement("script");
-      const timer=setTimeout(()=>{cleanup();reject(new Error("timeout"));},15000);
+      const timer=setTimeout(()=>{cleanup();reject(new Error("timeout"));},12000);
       function cleanup(){clearTimeout(timer);try{delete window[cb];}catch{}script.remove();}
       window[cb]=data=>{cleanup();resolve(data);};
       script.onerror=()=>{cleanup();reject(new Error("network"));};
@@ -409,31 +408,24 @@ window.addEventListener("online",renderStartFlow);window.addEventListener("offli
   async function createEventViaPost(params){
     const endpoint=(document.getElementById("sEndpoint")?.value||cfg.endpoint||"").trim();
     if(!endpoint)throw new Error("Google Apps Script URLが未設定です");
-
+    const requestId="event_"+Date.now()+"_"+Math.random().toString(36).slice(2,10);
     await fetch(endpoint,{
-      method:"POST",
-      mode:"no-cors",
-      cache:"no-store",
+      method:"POST",mode:"no-cors",cache:"no-store",
       headers:{"Content-Type":"text/plain;charset=utf-8"},
-      body:JSON.stringify({...params,action:"CREATE_EVENT"})
+      body:JSON.stringify({action:"BRIDGE_REQUEST",requestId,op:"CREATE_EVENT",payload:params})
     });
-
-    // GAS may still be creating the spreadsheet after the POST dispatch returns.
-    // Poll the shared master until the new event appears.
-    let lastError=null;
-    for(let attempt=0;attempt<12;attempt++){
-      if(attempt)await new Promise(r=>setTimeout(r,1000));
+    let last=null;
+    for(let i=0;i<20;i++){
+      if(i)await new Promise(r=>setTimeout(r,700));
       try{
-        const res=await jsonpMasterList(endpoint,params.masterId,params.year);
-        if(res&&res.ok&&Array.isArray(res.items)){
-          const found=res.items.find(x=>String(x.year||"")===String(params.year||"")&&String(x.event||"")===String(params.event||""));
-          if(found&&found.sheetId){
-            return {ok:true,exists:attempt===0,sheetId:String(found.sheetId),sheetName:String(found.event||params.event||""),url:"https://docs.google.com/spreadsheets/d/"+String(found.sheetId)+"/edit"};
-          }
-        }
-      }catch(e){lastError=e;}
+        const r=await bridgeResultV31(endpoint,requestId);
+        if(r&&r.pending)continue;
+        if(r&&r.ok===false&&r.bridgeError)throw new Error(r.error||"bridge error");
+        if(r&&r.ready)return r.result;
+        last=r;
+      }catch(e){last=e;}
     }
-    throw lastError||new Error("作成結果を共有大会マスタで確認できませんでした");
+    throw(last instanceof Error?last:new Error("大会作成結果を取得できませんでした"));
   }
 
   async function createEventSpreadsheetV30(){
