@@ -1,13 +1,13 @@
-const CACHE = "lap-number-v31-v30transport1";
+const CACHE = "lap-number-v31-v9route1";
 
 self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE)
       .then(cache => cache.addAll([
         "./style.css?v=29r3",
-        "./app/app.js?v=31v30transport1",
+        "./app/app.js?v=31v9route1",
         "./app/restore.js?v=30r7",
-        "./app/reliable.js?v=31v30transport1",
+        "./app/reliable.js?v=31v9route1",
         "./manifest.json"
       ]))
       .then(() => self.skipWaiting())
