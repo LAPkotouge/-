@@ -436,10 +436,10 @@ window.addEventListener("online",renderStartFlow);window.addEventListener("offli
       localStorage.setItem(MASTER_ID_KEY,masterId);
       localStorage.setItem("lap_number_active_master_id",masterId);
       document.getElementById("sSheetId").value="";
-      status.textContent=`✅ ${filename} の作成命令を送信しました。V9では保存先IDをスマホへ返さず、共有マスタからGAS側で自動解決します。`;
+      status.textContent=`✅ ${filename} の作成命令を送信しました。記録シートはGAS側で共有マスタから自動管理します。`;
       document.getElementById("saveSettings")?.click();
     }catch(e){
-      status.textContent=`❌ 新規大会を作成できませんでした：${e.message||e}。Apps Script V9・共有大会マスタID・通信状態を確認してください。`;
+      status.textContent=`❌ 新規大会の作成命令を送信できませんでした：${e.message||e}。共有大会マスタID・GAS URL・通信状態を確認してください。`;
     }finally{
       btn.disabled=false;
     }
