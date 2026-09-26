@@ -6,7 +6,7 @@
 // =====================================================
 (function setupReliableRecordTransport(){
   let sending=false;
-  function payload(item){return {...item,sheetId:item.sheetId||cfg.sheetId||'',action:'RECORD_ADD'};}
+  function payload(item){return {...item,inputType:item.inputType||(item.recognized?'音声認識':'ボタン'),sheetId:item.sheetId||cfg.sheetId||'',action:'RECORD_ADD'};}
   async function drain(){
     if(sending||!sendQueue.length||!cfg.endpoint||!navigator.onLine)return;
     sending=true;
@@ -25,7 +25,7 @@
   }
   window.v31ReliableSend=drain;
   window.v31ProcessQueue=drain;
-  setInterval(()=>{if(sendQueue.length&&navigator.onLine)drain();},1000);
+  setInterval(()=>{if(sendQueue.length&&navigator.onLine)drain();},250);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)drain();});
   window.addEventListener('focus',drain);
   setTimeout(drain,100);
