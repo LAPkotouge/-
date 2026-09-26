@@ -63,12 +63,13 @@ function masterList_(d){
   return {ok:true,items};
 }
 function masterDelete_(d){const ss=SpreadsheetApp.openById(String(d.masterId||"").trim()),sh=ensureMasterSheet_(ss),v=sh.getDataRange().getValues();for(let i=v.length-1;i>=1;i--)if(String(v[i][0])===String(d.year||"")&&String(v[i][1])===String(d.event||""))sh.deleteRow(i+1);return {ok:true};}
+function bool_(v){return v===true||v===1||String(v||"").trim().toLowerCase()==="1"||String(v||"").trim().toLowerCase()==="true";}
 function addRecord_(ss,d){
   const lock=LockService.getScriptLock();lock.waitLock(20000);try{
     const sh=ensureRecordSheet_(ss,sanitizeSheetName_(d.point||"未設定")),id=String(d.id||"").trim();
     if(id&&findRowById_(sh,id)>0)return {ok:true,duplicateId:true,id};
     const no=Math.max(0,sh.getLastRow()-1)+1;
-    sh.appendRow([no,new Date(),d.event||"",d.date||"",d.mode||"",d.point||"",d.staff||"",d.time||"",d.value||"",d.recognized?"番号認識":"ムリ",d.lap||"",d.duplicate?"重複":"",d.recognized?"":"ムリ",id]);
+    sh.appendRow([no,new Date(),d.event||"",d.date||"",d.mode||"",d.point||"",d.staff||"",d.time||"",d.value||"",bool_(d.recognized)?"番号認識":"ムリ",d.lap||"",bool_(d.duplicate)?"重複":"",bool_(d.recognized)?"":"ムリ",id]);
     sh.getRange(sh.getLastRow(),1).setNumberFormat("0");return {ok:true,action:"ADD",no,id,sheet:sh.getName()};
   }finally{lock.releaseLock();}
 }
