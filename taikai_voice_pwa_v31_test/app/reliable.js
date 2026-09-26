@@ -5,6 +5,8 @@
 // ・同一記録IDの再送はApps Script側で重複登録を防止
 // =====================================================
 (function setupReliableRecordTransport(){
+  // V31専用送信ロック。旧app.jsのisSendingとは完全分離する。
+  let reliableSending=false;
   function jsonpRecordSend(item){
     return new Promise((resolve,reject)=>{
       const endpoint=String(cfg.endpoint||'').trim();
@@ -76,8 +78,8 @@
 
   // 既存processQueueを安定化版へ差し替え
   processQueue=async function(){
-    if(isSending||!sendQueue.length||!cfg.endpoint||!navigator.onLine)return;
-    isSending=true;
+    if(reliableSending||!sendQueue.length||!cfg.endpoint||!navigator.onLine)return;
+    reliableSending=true;
     try{
       while(sendQueue.length&&navigator.onLine){
         const item=sendQueue[0];
@@ -101,7 +103,7 @@
         }
       }
     }finally{
-      isSending=false;
+      reliableSending=false;
       // 送信完了直後に新規受付が追加された競合を取りこぼさない。
       // キューが残っていれば短時間後に必ず次の送信処理を起動する。
       if(sendQueue.length&&navigator.onLine){
