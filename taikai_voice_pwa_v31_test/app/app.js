@@ -7,7 +7,7 @@ const KEY_SEQ = "taikai_voice_seq_v1";
 const KEY_PACK = "lap_number_v31_pack_mode";
 const KEY_FIELD_LOCK = "lap_number_v31_field_lock";
 
-let cfg = { event:"大会名未設定", date:"", mode:"MARATHON", point:"地点未設定", staff:"", top:"", relayGap:1, endpoint:"", sheetId:"", sheetName:"" };
+let cfg = { event:"大会名未設定", date:"", mode:"MARATHON", bibRange:"MIXED", point:"地点未設定", staff:"", top:"", relayGap:1, endpoint:"", sheetId:"", sheetName:"" };
 let records = [], sendQueue = [], ok = 0, muri = 0, recognition = null, listening = false, restartTimer = null, deferredInstall = null, isSending = false, manMode = false, seqCounter = 0;
 let lastSpeech = "—";
 let speechCandidateTs = 0;
@@ -24,6 +24,7 @@ let pendingGapCaptureTs = 0;
 function load(){
   try{ Object.assign(cfg, JSON.parse(localStorage.getItem(KEY_CFG)||"{}")); }catch{}
   cfg.relayGap = Math.max(1, Math.min(60, Number(cfg.relayGap)||1));
+  cfg.bibRange = ["NORMAL","MAN","MIXED"].includes(cfg.bibRange) ? cfg.bibRange : "MIXED";
   cfg.sheetId = String(cfg.sheetId||"").trim();
   cfg.sheetName = String(cfg.sheetName||"").trim();
   try{ records = JSON.parse(localStorage.getItem(KEY_REC)||"[]"); }catch{ records=[]; }
@@ -215,7 +216,13 @@ const jpDigit={零:0,〇:0,一:1,二:2,三:3,四:4,五:5,六:6,七:7,八:8,九:9
 function kanaDigitsToNumber(s){ let x=normalizeSpeech(s),out="",keys=Object.keys(digitKana).sort((a,b)=>b.length-a.length); while(x){let found=false;for(const k of keys)if(x.startsWith(k)){out+=digitKana[k];x=x.slice(k.length);found=true;break}if(!found)return null}if(!out||out.length>5)return null;const n=Number(out);return n>=1&&n<=99999?n:null; }
 function jpToNumber(s){ let x=normalizeSpeech(s);Object.keys(jpRead).sort((a,b)=>b.length-a.length).forEach(k=>x=x.replaceAll(k,jpRead[k]));let total=0,section=0,num=0,has=false;for(const ch of x){if(jpDigit[ch]!==undefined){num=jpDigit[ch];has=true}else if(ch==="十"||ch==="百"||ch==="千"){section+=(num||1)*({十:10,百:100,千:1000}[ch]);num=0;has=true}else if(ch==="万"){section+=num;total+=section*10000;section=0;num=0;has=true}else return null}return has?total+section+num:null; }
 function digitTextToNumber(s){ const d=s.replace(/[^0-9]/g,"");if(!d)return null;const n=Number(d);return d&&n>=1&&n<=99999?n:null; }
-function parseNumber(raw){ const s=normalizeSpeech(raw); if(/むり|無理/i.test(s))return "MURI"; if(/キャンセル|きゃんせる|取り消し|とりけし|取消|戻す|もどす/.test(s))return "CANCEL"; if(cfg.mode==="EKIDEN"){let m=s.match(/(\d{1,4})-(\d{1,2})/);if(!m)m=s.match(/(\d{1,4}).{0,3}?(\d{1,2})区/);if(!m)m=s.match(/(\d{1,4})の(\d{1,2})/);if(!m)return null;const a=Number(m[1]),b=Number(m[2]);return a>=1&&a<=9999&&b>=1&&b<=25?`${a}-${b}`:null;} const candidates=[];const d=digitTextToNumber(s);if(d!==null)candidates.push({n:d,score:1});const kd=kanaDigitsToNumber(s);if(kd!==null)candidates.push({n:kd,score:8});const j=jpToNumber(s);if(j!==null)candidates.push({n:j,score:/万|千|百|十/.test(s)?10:2});candidates.sort((a,b)=>b.score-a.score);for(const c of candidates)if(c.n>=1&&c.n<=99999)return String(c.n);return null; }
+function bibInRange(n){
+  n=Number(n); if(!Number.isFinite(n))return false;
+  if(cfg.bibRange==="NORMAL")return n>=1&&n<=9999;
+  if(cfg.bibRange==="MAN")return n>=10000&&n<=99999;
+  return n>=1&&n<=99999;
+}
+function parseNumber(raw){ const s=normalizeSpeech(raw); if(/むり|無理/i.test(s))return "MURI"; if(/キャンセル|きゃんせる|取り消し|とりけし|取消|戻す|もどす/.test(s))return "CANCEL"; if(cfg.mode==="EKIDEN"){let m=s.match(/(\d{1,4})-(\d{1,2})/);if(!m)m=s.match(/(\d{1,4}).{0,3}?(\d{1,2})区/);if(!m)m=s.match(/(\d{1,4})の(\d{1,2})/);if(!m)return null;const a=Number(m[1]),b=Number(m[2]);return a>=1&&a<=9999&&b>=1&&b<=25?`${a}-${b}`:null;} const candidates=[];const d=digitTextToNumber(s);if(d!==null)candidates.push({n:d,score:1});const kd=kanaDigitsToNumber(s);if(kd!==null)candidates.push({n:kd,score:8});const j=jpToNumber(s);if(j!==null)candidates.push({n:j,score:/万|千|百|十/.test(s)?10:2});candidates.sort((a,b)=>b.score-a.score);for(const c of candidates)if(bibInRange(c.n))return String(c.n);return null; }
 function relayLast(value){
   // V31: old records may have been created before mode was stored consistently.
   // For relay reception, find the latest valid same-number record in the current event/point.
@@ -338,7 +345,20 @@ function chooseBibAlternative(result){
   const limit=Math.min(result.length||0,5);
   for(let i=0;i<limit;i++){
     const a=result[i],raw=String(a.transcript||"").trim(),confidence=Number(a.confidence)||0;
-    const value=parseNumber(raw);
+    let value=parseNumber(raw);
+    // 万台大会では音声側が 20001→2001/21 のように0を落とすことがある。
+    // 受付番号帯が10,000以上と確定している時だけ、安全側に限定して0補完候補を作る。
+    if(!value && cfg.bibRange==="MAN"){
+      const n=digitTextToNumber(normalizeSpeech(raw)) ?? kanaDigitsToNumber(normalizeSpeech(raw));
+      if(n>=1&&n<=9999){
+        const s=String(n), candidates10k=[];
+        for(let z=1;z<=5-s.length;z++){
+          const v=Number(s[0]+"0".repeat(z)+s.slice(1));
+          if(v>=10000&&v<=99999)candidates10k.push(v);
+        }
+        if(candidates10k.length)value=String(candidates10k[candidates10k.length-1]);
+      }
+    }
     if(!value)continue;
     let score=confidence;
     const normalizedRaw=raw.normalize("NFKC").replace(/\\s+/g,"");
@@ -362,8 +382,8 @@ recognition.onresult=e=>{const result=e.results[0];const best=chooseBibAlternati
 if(packMode){const pack=parsePackNumbers(t);if(pack.length>=2){addPack(pack,t,captureTs,confidence);return;}if(packExpectedCount>=2&&pack.length===1){add(pack[0],true,t,captureTs,confidence,"音声認識");warnPackCountMismatch(packExpectedCount,1,pack,captureTs);packExpectedCount=0;renderPackCountControls();return;}}
 const v=best?best.value:parseNumber(t);if(v==="CANCEL")cancelLast();else if(v==="MURI")add("ムリ",false,t,captureTs,confidence,"音声認識");else if(v)add(v,true,t,captureTs,confidence,"音声認識");else $("status").textContent=`認識できません：「${t}」`;};recognition.onerror=e=>{speechCandidateTs=0;if(e.error!=="aborted")$("status").textContent="音声認識エラー："+e.error;};recognition.onend=()=>{if(listening){clearTimeout(restartTimer);restartTimer=setTimeout(()=>{try{recognition.start()}catch{}},180)}};listening=true;render();try{recognition.start()}catch{}}
 function stopRecognition(){listening=false;clearTimeout(restartTimer);try{recognition&&recognition.abort()}catch{}render()}
-function fillSettings(){$("sEvent").value=cfg.event==="大会名未設定"?"":cfg.event;$("sDate").value=cfg.date;$("sMode").value=cfg.mode;$("sPoint").value=cfg.point==="地点未設定"?"":cfg.point;$("sStaff").value=cfg.staff;$("sTop").value=cfg.top;$("sRelayGap").value=cfg.relayGap;$("sEndpoint").value=cfg.endpoint;$("sSheetId").value=cfg.sheetId||"";const rw=$("relayGapWrap");if(rw)rw.hidden=cfg.mode!=="RELAY";const cs=$("connectionStatus");if(cs)cs.textContent=cfg.sheetName?`現在の保存先：${cfg.sheetName}`:"";}
-function saveSettings(){cfg.event=$("sEvent").value||"大会名未設定";cfg.date=$("sDate").value;cfg.mode=$("sMode").value;cfg.point=$("sPoint").value||"地点未設定";cfg.staff=$("sStaff").value;cfg.top=$("sTop").value;cfg.relayGap=Math.max(1,Math.min(60,Number($("sRelayGap").value)||1));cfg.endpoint=$("sEndpoint").value.trim();cfg.sheetId=$("sSheetId").value.trim();cfg.sheetName="";save();$("settingsPanel").hidden=true;render();processQueue();}
+function fillSettings(){$("sEvent").value=cfg.event==="大会名未設定"?"":cfg.event;$("sDate").value=cfg.date;$("sMode").value=cfg.mode;if($("sBibRange"))$("sBibRange").value=cfg.bibRange||"MIXED";$("sPoint").value=cfg.point==="地点未設定"?"":cfg.point;$("sStaff").value=cfg.staff;$("sTop").value=cfg.top;$("sRelayGap").value=cfg.relayGap;$("sEndpoint").value=cfg.endpoint;$("sSheetId").value=cfg.sheetId||"";const rw=$("relayGapWrap");if(rw)rw.hidden=cfg.mode!=="RELAY";const cs=$("connectionStatus");if(cs)cs.textContent=cfg.sheetName?`現在の保存先：${cfg.sheetName}`:"";}
+function saveSettings(){cfg.event=$("sEvent").value||"大会名未設定";cfg.date=$("sDate").value;cfg.mode=$("sMode").value;cfg.bibRange=$("sBibRange")?.value||"MIXED";cfg.point=$("sPoint").value||"地点未設定";cfg.staff=$("sStaff").value;cfg.top=$("sTop").value;cfg.relayGap=Math.max(1,Math.min(60,Number($("sRelayGap").value)||1));cfg.endpoint=$("sEndpoint").value.trim();cfg.sheetId=$("sSheetId").value.trim();cfg.sheetName="";save();$("settingsPanel").hidden=true;render();processQueue();}
 function clearRecords(){if(!confirm("この端末の登録データを全て消去します。No.も1から再開します。よろしいですか？"))return;records=[];sendQueue=[];seqCounter=0;lastSpeech="—";save();render();}
 function testDestination(){const status=$("connectionStatus"),endpoint=$("sEndpoint").value.trim(),sheetId=$("sSheetId").value.trim();if(!endpoint){status.textContent="❌ Google Apps Script URLを入力してください";return}if(!sheetId){status.textContent="❌ 保存先スプレッドシートIDを入力してください";return}status.textContent="接続確認中…";const payload={action:"PING",sheetId,event:$("sEvent").value||"接続確認",date:$("sDate").value||"",mode:$("sMode").value||"MARATHON",point:$("sPoint").value||"接続確認",staff:$("sStaff").value||"",time:now(),id:"PING_"+Date.now()};const c=new AbortController(),timer=setTimeout(()=>c.abort(),15000);fetch(endpoint,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),signal:c.signal}).then(()=>{clearTimeout(timer);cfg.sheetId=sheetId;cfg.sheetName="";status.textContent="✅ 接続要求を送信できました。保存後、テスト番号を1件登録して確認してください。";}).catch(()=>{clearTimeout(timer);status.textContent="❌ 接続確認できませんでした。URL・ID・通信状態を確認してください。";});}
 
