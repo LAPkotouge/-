@@ -5,9 +5,9 @@ self.addEventListener("install", event => {
     caches.open(CACHE)
       .then(cache => cache.addAll([
         "./style.css?v=29r3",
-        "./app/app.js?v=31v13speech1",
+        "./app/app.js?v=31v13speech2",
         "./app/restore.js?v=30r7",
-        "./app/reliable.js?v=31v13speech1",
+        "./app/reliable.js?v=31v13speech2",
         "./manifest.json"
       ]))
       .then(() => self.skipWaiting())
