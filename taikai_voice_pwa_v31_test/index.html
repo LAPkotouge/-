@@ -12,17 +12,18 @@
 body.v31-race-live .v31VoicePackGrid .v31PackRow{display:contents!important}
 body.v31-race-live .v31VoicePackGrid .v31PackBtn{display:block!important}
 
-/* V31 compact pre-race controls */
-.v31StartFlow{margin-top:5px;padding:6px 7px;border-radius:9px}
-.v31StartFlowTitle{display:flex;align-items:center;justify-content:space-between;gap:7px;margin:0 0 3px}
-.v31StartFlowTitle>b{font-size:15px;line-height:1.15;white-space:nowrap}
-.v31StartFlowTitle .v31FieldLockBtn{width:auto;min-height:32px;margin:0;padding:3px 9px;border-radius:8px;font-size:12px;line-height:1.1;white-space:nowrap;flex:0 0 auto}
-.v31StartSteps{gap:3px;margin:3px 0 4px;flex-wrap:nowrap}
-.v31StartSteps span{padding:3px 6px;border-radius:10px;font-size:10px;line-height:1.1;white-space:nowrap}
-.v31StartFlow .v31Diag{margin-top:3px;padding:4px 6px;gap:6px;min-height:32px}
-.v31StartFlow .v31Diag>div:first-child{gap:4px;font-size:10px;flex:1 1 auto;min-width:0}
-.v31StartFlow .v31Diag span{font-size:10px}
-.v31StartFlow .v31Diag button{min-height:28px;padding:2px 8px;font-size:11px;border-radius:7px}
+/* V31 ultra-compact pre-race controls */
+.v31StartFlow{margin-top:4px!important;padding:4px 5px!important;border-radius:8px!important}
+.v31StartFlowTitle{display:flex;align-items:center;justify-content:space-between;gap:5px;margin:0 0 2px!important}
+.v31StartFlowTitle>b{font-size:13px!important;line-height:1!important;white-space:nowrap}
+.v31StartFlowTitle .v31FieldLockBtn{width:auto!important;min-height:27px!important;height:27px!important;margin:0!important;padding:2px 7px!important;border-radius:7px!important;font-size:11px!important;line-height:1!important;white-space:nowrap;flex:0 0 auto}
+.v31StartSteps{display:flex!important;gap:2px!important;margin:2px 0!important;flex-wrap:wrap!important}
+.v31StartSteps span{padding:2px 5px!important;border-radius:9px!important;font-size:9px!important;line-height:1!important;white-space:nowrap}
+.v31StartFlow .v31Diag{margin-top:2px!important;padding:3px 5px!important;gap:5px!important;min-height:29px!important;border-radius:7px!important}
+.v31StartFlow .v31Diag>div:first-child{gap:3px!important;font-size:9px!important;flex:1 1 auto;min-width:0;white-space:nowrap}
+.v31StartFlow .v31Diag b,.v31StartFlow .v31Diag span{font-size:9px!important;line-height:1!important}
+.v31StartFlow .v31Diag button{min-height:25px!important;height:25px!important;padding:1px 7px!important;font-size:10px!important;line-height:1!important;border-radius:6px!important}
+.v31StartFlow #v31MicTestResult{display:none!important}
 </style></head>
 <body><div id="v31Flash" class="v31Flash" aria-live="assertive"><div id="v31FlashNo" class="v31FlashNo"></div><div id="v31FlashMeta" class="v31FlashMeta"></div></div><main class="wrap">
 <header class="appHeader"><div class="titleRow"><div id="event" class="eventTitle">大会名未設定</div><div id="eventDate" class="eventDate"></div></div><div class="infoBox"><div class="infoRow"><span id="staff">担当：未設定</span><span class="dotSep">・</span><span id="point">地点未設定</span><span class="dotSep">・</span><span id="connectionState" class="connected">● 接続中</span><span class="dotSep">・</span><span id="status" class="status">停止中</span></div><div id="destination" class="destination">保存先：標準スプレッドシート</div>
@@ -45,7 +46,7 @@ body.v31-race-live .v31VoicePackGrid .v31PackBtn{display:block!important}
 <div class="eventProfileBox"><div class="profileTitle">大会設定管理</div><label>保存済み大会<select id="eventProfileSelect"><option value="">保存済み大会を選択</option></select></label><div class="profileYearRow"><label>年<input id="profileYear" type="number" min="2000" max="2100" step="1" placeholder="2026"></label><div class="profileHint">大会共通設定だけをこの端末に保存します。地点名・担当者名はこのスマホ側に残ります。</div></div><div class="profileBtns"><button type="button" id="saveEventProfile">大会設定を保存</button><button type="button" id="loadEventProfile">呼び出し</button><button type="button" id="deleteEventProfile">削除</button></div><div class="profileCopyRow"><label>複製先の年<input id="copyToYear" type="number" min="2000" max="2100" step="1"></label><button type="button" id="copyPrevProfile">前年大会から複製</button></div><div class="profileShareBtns"><button type="button" id="makeProfileQr">QRコード作成</button><button type="button" id="copyProfileUrl">共有URLをコピー</button></div><div id="qrShareBox" class="qrShareBox" hidden><div id="qrCode"></div><div class="profileHint">このQRには大会共通設定だけを入れます。地点名・担当者名は含みません。</div><button type="button" id="closeProfileQr">QRコードを閉じる</button></div><div id="profileStatus" class="hint"></div></div>
 <div class="eventProfileBox"><div class="profileTitle">共有大会マスタ</div><label>共有マスタ スプレッドシートID<input id="sharedMasterId" autocomplete="off" placeholder="共有大会マスタ用スプレッドシートのID"></label><div class="profileYearRow"><label>年<input id="sharedYear" type="number" min="2000" max="2100" step="1" placeholder="2026"></label><div class="profileHint">同じ共有マスタIDをPC・スマホに設定すると、同じ大会一覧を呼び出せます。</div></div><label>共有大会<select id="sharedProfileSelect"><option value="">共有大会を選択</option></select></label><div class="profileBtns"><button type="button" id="refreshSharedMaster">一覧更新</button><button type="button" id="saveSharedMaster">共有へ登録</button><button type="button" id="loadSharedMaster">呼び出し</button></div><button type="button" id="deleteSharedMaster" class="testBtn">共有マスタから削除</button><div id="sharedMasterStatus" class="hint"></div></div>
 <label>大会名<input id="sEvent"></label><label>開催日<input id="sDate" type="date"></label><label>ゼッケン番号帯<select id="sBibRange"><option value="NORMAL">通常番号（1～9,999）</option><option value="MAN">万台番号（10,000～99,999）</option><option value="MIXED" selected>混在番号（1～99,999）</option></select></label><label>方式<select id="sMode"><option value="MARATHON">マラソン</option><option value="EKIDEN">駅伝</option><option value="RELAY">リレーマラソン</option></select></label><label>地点名<input id="sPoint" placeholder="フィニッシュ / 第1中継所 / 5km など"></label><label>担当者名<input id="sStaff"></label><label>TOP予想時刻<input id="sTop" placeholder="09:30:00"></label><label id="relayGapWrap" hidden>周回差（再読み取り無効時間・1～60分）<input id="sRelayGap" type="number" min="1" max="60" step="1" value="1"></label><label id="sheetIdWrap" hidden>保存先スプレッドシートID<input id="sSheetId" autocomplete="off"></label><label>Google Apps Script URL<input id="sEndpoint" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec"></label><button type="button" id="testConnectionBtn" class="testBtn">🔗 通信確認</button><div id="connectionStatus" class="hint"></div><div class="dialogBtns"><button type="button" id="saveSettings">保存</button><button type="button" id="closeSettings">閉じる</button></div><div class="clearActions"><button type="button" id="clearRecordsBtn" class="clearBtn appClearBtn">アプリ内クリア</button><button type="button" id="clearPointSheetBtn" class="clearBtn sheetClearBtn">シート全消去</button></div><div id="v30RestoreMount"></div><p class="small">左：この端末の登録データだけを消去　／　右：現在の地点シートの見出し以外を全消去</p><p class="small">保存先は共有大会マスタから自動解決します。Spreadsheet IDの入力は不要です。</p></div></div></main>
-<script src="app/app.js?v=31safe4"></script>
+<script src="app/app.js?v=31safe5"></script>
 <script src="app/restore.js?v=31safe2"></script>
 <script src="app/reliable.js?v=31safe2"></script>
 <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs@04f46c6a0708418cb7b96fc563eacae0fbf77674/qrcode.min.js"></script>
