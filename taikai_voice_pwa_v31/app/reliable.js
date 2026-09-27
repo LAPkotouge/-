@@ -6,7 +6,7 @@
 // =====================================================
 (function setupReliableRecordTransport(){
   let sending=false;
-  function payload(item){return {...item,inputType:item.inputType||(item.recognized?'音声認識':'ボタン'),sheetId:item.sheetId||cfg.sheetId||'',action:'RECORD_ADD'};}
+  function payload(item){const masterId=(document.getElementById('sharedMasterId')?.value||localStorage.getItem('lap_number_active_master_id')||localStorage.getItem('lap_number_shared_master_id')||'').trim();const date=String(item.date||cfg.date||'');const year=date.slice(0,4)||String(new Date().getFullYear());return {...item,inputType:item.inputType||(item.recognized?'音声認識':'ボタン'),sheetId:item.sheetId||cfg.sheetId||'',masterId,year,event:String(item.event||cfg.event||''),date,mode:String(item.mode||cfg.mode||''),relayGap:String(cfg.relayGap||''),endpoint:String(cfg.endpoint||''),action:'RECORD_ADD'};}
   async function drain(){
     if(sending||!sendQueue.length||!cfg.endpoint||!navigator.onLine)return;
     sending=true;
