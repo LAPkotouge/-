@@ -1,6 +1,7 @@
 {
   "name": "LAP NUMBER TEST",
   "short_name": "LAP TEST",
+  "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -8,7 +9,6 @@
   "theme_color": "#0b57d0",
   "lang": "ja",
   "description": "LAP NUMBER V31 テスト版 ゼッケンナンバー受付・管理システム",
-  "id": "./",
   "icons": [
     {
       "src": "icon-192.svg",
@@ -20,7 +20,7 @@
       "src": "icon-512.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }
