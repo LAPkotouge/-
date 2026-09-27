@@ -106,7 +106,7 @@ function toggleFieldLock(){
 
 
 function renderStartFlow(){
-  const wrap=$("v31StartSteps"),btn=$("v31StartBtn");if(!wrap||!btn)return;
+  const wrap=$("v31StartSteps");if(!wrap)return;
   const eventOk=!!(cfg.event&&cfg.point&&cfg.staff);
   const speechOk=!!(window.SpeechRecognition||window.webkitSpeechRecognition);
   const networkOk=navigator.onLine;
@@ -114,8 +114,6 @@ function renderStartFlow(){
     ["大会・地点",eventOk],["音声対応",speechOk],["通信",networkOk],["音声テスト",micTestPassed],["誤操作防止",fieldLock]
   ];
   wrap.innerHTML=steps.map(([n,ok])=>`<span class="${ok?"ok":"ng"}">${ok?"✓":"△"} ${n}</span>`).join("");
-  btn.disabled=!(eventOk&&speechOk&&micTestPassed&&fieldLock);
-  btn.textContent=raceLiveMode?"● 本番受付中":"本番受付を開始";
 }
 
 
@@ -168,9 +166,14 @@ function setRaceLiveMode(on){
   renderStartFlow();renderQuickUndo();
 }
 function startRaceReception(){
-  if(!fieldLock){$("status").textContent="誤操作防止をONにしてください";return;}
+  const eventOk=!!(cfg.event&&cfg.point&&cfg.staff);
+  const speechOk=!!(window.SpeechRecognition||window.webkitSpeechRecognition);
+  if(!eventOk){$("status").textContent="大会・地点・担当者を設定してください";return;}
+  if(!speechOk){$("status").textContent="この端末は音声認識に対応していません";return;}
   if(!micTestPassed){$("status").textContent="先に端末音声テストを実施してください";return;}
-  setRaceLiveMode(true);if(!listening)startRecognition();
+  if(!fieldLock){fieldLock=true;save();renderFieldLock();}
+  setRaceLiveMode(true);
+  if(!listening)startRecognition();
 }
 
 
@@ -387,12 +390,11 @@ function saveSettings(){cfg.event=$("sEvent").value||"大会名未設定";cfg.da
 function clearRecords(){if(!confirm("この端末の登録データを全て消去します。No.も1から再開します。よろしいですか？"))return;records=[];sendQueue=[];seqCounter=0;lastSpeech="—";save();render();}
 function testDestination(){const status=$("connectionStatus"),endpoint=$("sEndpoint").value.trim();if(!endpoint){status.textContent="❌ Google Apps Script URLを入力してください";return}if(!navigator.onLine){status.textContent="❌ オフラインです";return}status.textContent="通信確認中…";const masterId=(document.getElementById("sharedMasterId")?.value||localStorage.getItem("taikai_voice_shared_master_id_v1")||"").trim();const date=$("sDate").value||"";const payload={action:"PING",sheetId:"",masterId,year:date.slice(0,4)||String(new Date().getFullYear()),event:$("sEvent").value||"接続確認",date,mode:$("sMode").value||"MARATHON",point:$("sPoint").value||"接続確認",staff:$("sStaff").value||"",time:now(),id:"PING_"+Date.now()};fetch(endpoint,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=UTF-8"},body:JSON.stringify(payload),cache:"no-store"}).then(()=>{status.textContent="✅ GASへ通信要求を送信できました。保存先IDの入力は不要です。";}).catch(()=>{status.textContent="❌ 通信確認できませんでした。GAS URL・通信状態を確認してください。";});}
 
-$("voiceBtn").addEventListener("click",()=>listening?stopRecognition():startRecognition());
+$("voiceBtn").addEventListener("click",()=>listening?stopRecognition():startRaceReception());
 $("packModeBtn")?.addEventListener("click",()=>{packMode=!packMode;if(!packMode)packExpectedCount=0;save();render();});
 document.querySelectorAll("[data-pack-count]").forEach(b=>b.addEventListener("click",()=>setPackExpectedCount(Number(b.dataset.packCount))));
 $("v31MicTestBtn")?.addEventListener("click",runMicTest);
 $("v31FieldLockBtn")?.addEventListener("click",()=>{toggleFieldLock();renderStartFlow();});
-$("v31StartBtn")?.addEventListener("click",startRaceReception);
 $("v31QuickUndoBtn")?.addEventListener("click",quickUndoLatest);
 $("v31GapFillBtn")?.addEventListener("click",fillGapWithMuri);
 $("v31GapDismissBtn")?.addEventListener("click",()=>{clearGapFill();$("status").textContent="人数抜け補完を見送りました";});
@@ -403,7 +405,7 @@ window.addEventListener("online",renderStartFlow);window.addEventListener("offli
 // V30：大会別記録スプレッドシート自動作成
 // =====================================================
 (function setupV30(){
-  const VERSION_TEXT="LAP NUMBER　V＝３１ TEST autoID2";
+  const VERSION_TEXT="LAP NUMBER　V＝３１ TEST autoID3";
   const MASTER_ID_KEY="taikai_voice_shared_master_id_v1";
 
   const style=document.createElement("style");
