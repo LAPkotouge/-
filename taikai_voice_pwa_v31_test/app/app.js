@@ -111,7 +111,7 @@ function renderStartFlow(){
   const speechOk=!!(window.SpeechRecognition||window.webkitSpeechRecognition);
   const networkOk=navigator.onLine;
   const steps=[
-    ["大会・地点",eventOk],["音声対応",speechOk],["通信",networkOk],["音声テスト",micTestPassed],["誤操作防止",fieldLock]
+    ["大会・地点",eventOk],["音声対応",speechOk],["通信",networkOk],["音声テスト",micTestPassed]
   ];
   wrap.innerHTML=steps.map(([n,ok])=>`<span class="${ok?"ok":"ng"}">${ok?"✓":"△"} ${n}</span>`).join("");
 }
@@ -405,7 +405,7 @@ window.addEventListener("online",renderStartFlow);window.addEventListener("offli
 // V30：大会別記録スプレッドシート自動作成
 // =====================================================
 (function setupV30(){
-  const VERSION_TEXT="LAP NUMBER　V＝３１ TEST autoID3";
+  const VERSION_TEXT="LAP NUMBER　V＝３１ TEST autoID4";
   const MASTER_ID_KEY="taikai_voice_shared_master_id_v1";
 
   const style=document.createElement("style");
