@@ -1,11 +1,11 @@
-const CACHE = "lap-number-v31-test-ui4";
+const CACHE = "lap-number-v31-test-ui5";
 
 self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE)
       .then(cache => cache.addAll([
-        "./style.css?v=29r3",
-        "./app/app.js?v=31safe5",
+        "./style.css?v=29r4",
+        "./app/app.js?v=31safe6",
         "./app/restore.js?v=31safe2",
         "./app/reliable.js?v=31safe2",
         "./manifest.json?v=31pwa1",
@@ -35,6 +35,7 @@ self.addEventListener("fetch", event => {
     return;
   }
   event.respondWith(
-    caches.match(event.request).then(response => response || fetch(event.request))
+    fetch(event.request, {cache:"no-store"})
+      .catch(() => caches.match(event.request))
   );
 });
