@@ -15,9 +15,7 @@
         const item=sendQueue[0];
         try{
           const body=JSON.stringify(payload(item));
-          // 同一記録IDを2回送信。GAS側の記録ID重複防止を利用し、通信取りこぼし耐性を上げる。
-          await fetch(String(cfg.endpoint).trim(),{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=UTF-8'},body});
-          await new Promise(resolve=>setTimeout(resolve,220));
+          // 送信経路は1本、1記録につきPOSTは1回だけ。
           await fetch(String(cfg.endpoint).trim(),{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=UTF-8'},body});
           sendQueue.shift(); save(); render();
         }catch(e){break;}
