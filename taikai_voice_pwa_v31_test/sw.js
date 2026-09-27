@@ -1,4 +1,4 @@
-const CACHE = "lap-number-v31-test-safe2";
+const CACHE = "lap-number-v31-test-ui1";
 
 self.addEventListener("install", event => {
   event.waitUntil(
