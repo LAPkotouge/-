@@ -52,7 +52,20 @@ processQueue = async function(){
   try{
     while(sendQueue.length && navigator.onLine){
       const item = sendQueue[0];
-      const payload = {...item, sheetId:item.sheetId || cfg.sheetId || ""};
+      const masterId=(document.getElementById('sharedMasterId')?.value||localStorage.getItem('lap_number_active_master_id')||localStorage.getItem('taikai_voice_shared_master_id_v1')||'').trim();
+      const date=String(item.date||cfg.date||'');
+      const payload = {...item,
+        action:'RECORD_ADD',
+        sheetId:item.sheetId || cfg.sheetId || "",
+        masterId,
+        year:date.slice(0,4)||String(new Date().getFullYear()),
+        event:String(item.event||cfg.event||''),
+        date,
+        mode:String(item.mode||cfg.mode||''),
+        relayGap:String(cfg.relayGap||''),
+        endpoint:String(cfg.endpoint||''),
+        inputType:String(item.inputType||(item.recognized?'音声認識':'ボタン'))
+      };
 
       try{
         await fetch(cfg.endpoint,{
