@@ -7,8 +7,8 @@
 .v31VoicePackGrid{grid-template-columns:minmax(0,1fr) 78px!important;gap:8px!important}
 .v31VoicePackGrid .v31PackBtn{width:78px!important;height:52px!important;min-height:52px!important;padding:4px!important;border:1.5px solid #188038!important;border-radius:9px!important;background:#fff!important;color:#188038!important;font-size:16px!important;line-height:1.05!important;font-weight:900!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important}
 .v31VoicePackGrid .v31PackBtn.on{background:#188038!important;color:#fff!important;border-color:#188038!important}
-.manual #numberInput{font-size:clamp(38px,11vw,44px)!important;line-height:1!important;padding:1px 4px!important}
-.manual #numberInput::placeholder{font-size:24px!important;line-height:1!important;font-weight:900!important}
+.manual #numberInput{font-size:clamp(38px,11vw,44px)!important;line-height:44px!important;height:52px!important;min-height:52px!important;padding:0 4px!important;box-sizing:border-box!important}
+.manual #numberInput::placeholder{font-size:24px!important;line-height:44px!important;font-weight:800!important;color:#9b9b9b!important;opacity:1!important}
 
 /* V31 same-row cancel + number delete */
 .deleteActionRow{display:grid;grid-template-columns:minmax(105px,1.05fr) minmax(0,1fr) 56px;align-items:center;gap:5px;width:100%}
