@@ -1,11 +1,11 @@
-const CACHE = "lap-number-v31-test-ui9";
+const CACHE = "lap-number-v31-test-ui10";
 
 self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE)
       .then(cache => cache.addAll([
-        "./style.css?v=29r8",
-        "./app/app.js?v=31safe10",
+        "./style.css?v=29r9",
+        "./app/app.js?v=31safe11",
         "./app/restore.js?v=31safe2",
         "./app/reliable.js?v=31safe2",
         "./manifest.json?v=31pwa1",
