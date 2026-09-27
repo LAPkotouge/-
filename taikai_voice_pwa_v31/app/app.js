@@ -106,16 +106,14 @@ function toggleFieldLock(){
 
 
 function renderStartFlow(){
-  const wrap=$("v31StartSteps"),btn=$("v31StartBtn");if(!wrap||!btn)return;
+  const wrap=$("v31StartSteps");if(!wrap)return;
   const eventOk=!!(cfg.event&&cfg.point&&cfg.staff);
   const speechOk=!!(window.SpeechRecognition||window.webkitSpeechRecognition);
   const networkOk=navigator.onLine;
   const steps=[
-    ["大会・地点",eventOk],["音声対応",speechOk],["通信",networkOk],["音声テスト",micTestPassed],["誤操作防止",fieldLock]
+    ["大会・地点",eventOk],["音声対応",speechOk],["通信",networkOk],["音声テスト",micTestPassed]
   ];
   wrap.innerHTML=steps.map(([n,ok])=>`<span class="${ok?"ok":"ng"}">${ok?"✓":"△"} ${n}</span>`).join("");
-  btn.disabled=!(eventOk&&speechOk&&micTestPassed&&fieldLock);
-  btn.textContent=raceLiveMode?"● 本番受付中":"本番受付を開始";
 }
 
 
@@ -168,9 +166,14 @@ function setRaceLiveMode(on){
   renderStartFlow();renderQuickUndo();
 }
 function startRaceReception(){
-  if(!fieldLock){$("status").textContent="誤操作防止をONにしてください";return;}
+  const eventOk=!!(cfg.event&&cfg.point&&cfg.staff);
+  const speechOk=!!(window.SpeechRecognition||window.webkitSpeechRecognition);
+  if(!eventOk){$("status").textContent="大会・地点・担当者を設定してください";return;}
+  if(!speechOk){$("status").textContent="この端末は音声認識に対応していません";return;}
   if(!micTestPassed){$("status").textContent="先に端末音声テストを実施してください";return;}
-  setRaceLiveMode(true);if(!listening)startRecognition();
+  if(!fieldLock){fieldLock=true;save();renderFieldLock();}
+  setRaceLiveMode(true);
+  if(!listening)startRecognition();
 }
 
 
@@ -202,7 +205,7 @@ function render(){
   const latest=records.find(r=>!r.cancelled); $("latest").textContent=latest?.value||"—"; if($("latestSub"))$("latestSub").textContent=""; if($("rawSpeechValue"))$("rawSpeechValue").textContent=lastSpeech||"—"; renderHistory();
   $("voiceBtn").textContent=listening?"🛑 音声受付停止":"🎤 ナンバー読み上げ開始"; $("voiceBtn").classList.toggle("on",listening);
   $("status").textContent=(listening?"●音声受付中":"停止中")+(sendQueue.length?` ⚠未送信${sendQueue.length}件`:""); $("status").classList.toggle("voiceActiveStatus",listening);
-  const pb=$("packModeBtn");if(pb){pb.textContent=packMode?"集団モード ON":"集団モード OFF";pb.classList.toggle("on",packMode);}
+  const pb=$("packModeBtn");if(pb){pb.innerHTML="<span>集団</span><span>モード</span>";pb.setAttribute("aria-label",packMode?"集団モード ON":"集団モード OFF");pb.title=packMode?"集団モード ON":"集団モード OFF";pb.classList.toggle("on",packMode);}
   const ph=$("packModeHint");if(ph)ph.textContent=packMode?"連続番号をまとめて読み上げ可":"通常受付";
   const b=$("manModeBtn"); if(b)b.hidden=true;
   const mh=$("manModeHint");if(mh)mh.hidden=true; const rw=$("relayGapWrap");if(rw)rw.hidden=cfg.mode!=="RELAY"; renderFieldAlert(); renderFieldLock(); renderStartFlow(); renderPackCountControls(); renderLiveCounters();
@@ -385,25 +388,24 @@ function stopRecognition(){listening=false;clearTimeout(restartTimer);try{recogn
 function fillSettings(){$("sEvent").value=cfg.event==="大会名未設定"?"":cfg.event;$("sDate").value=cfg.date;$("sMode").value=cfg.mode;if($("sBibRange"))$("sBibRange").value=cfg.bibRange||"MIXED";$("sPoint").value=cfg.point==="地点未設定"?"":cfg.point;$("sStaff").value=cfg.staff;$("sTop").value=cfg.top;$("sRelayGap").value=cfg.relayGap;$("sEndpoint").value=cfg.endpoint;$("sSheetId").value=cfg.sheetId||"";const rw=$("relayGapWrap");if(rw)rw.hidden=cfg.mode!=="RELAY";const cs=$("connectionStatus");if(cs)cs.textContent=cfg.sheetName?`現在の保存先：${cfg.sheetName}`:"";}
 function saveSettings(){cfg.event=$("sEvent").value||"大会名未設定";cfg.date=$("sDate").value;cfg.mode=$("sMode").value;cfg.bibRange=$("sBibRange")?.value||"MIXED";cfg.point=$("sPoint").value||"地点未設定";cfg.staff=$("sStaff").value;cfg.top=$("sTop").value;cfg.relayGap=Math.max(1,Math.min(60,Number($("sRelayGap").value)||1));cfg.endpoint=$("sEndpoint").value.trim();cfg.sheetId=$("sSheetId").value.trim();cfg.sheetName="";save();$("settingsPanel").hidden=true;render();processQueue();}
 function clearRecords(){if(!confirm("この端末の登録データを全て消去します。No.も1から再開します。よろしいですか？"))return;records=[];sendQueue=[];seqCounter=0;lastSpeech="—";save();render();}
-function testDestination(){const status=$("connectionStatus"),endpoint=$("sEndpoint").value.trim(),sheetId=$("sSheetId").value.trim();if(!endpoint){status.textContent="❌ Google Apps Script URLを入力してください";return}if(!sheetId){status.textContent="❌ 保存先スプレッドシートIDを入力してください";return}status.textContent="接続確認中…";const payload={action:"PING",sheetId,event:$("sEvent").value||"接続確認",date:$("sDate").value||"",mode:$("sMode").value||"MARATHON",point:$("sPoint").value||"接続確認",staff:$("sStaff").value||"",time:now(),id:"PING_"+Date.now()};const c=new AbortController(),timer=setTimeout(()=>c.abort(),15000);fetch(endpoint,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),signal:c.signal}).then(()=>{clearTimeout(timer);cfg.sheetId=sheetId;cfg.sheetName="";status.textContent="✅ 接続要求を送信できました。保存後、テスト番号を1件登録して確認してください。";}).catch(()=>{clearTimeout(timer);status.textContent="❌ 接続確認できませんでした。URL・ID・通信状態を確認してください。";});}
+function testDestination(){const status=$("connectionStatus"),endpoint=$("sEndpoint").value.trim();if(!endpoint){status.textContent="❌ Google Apps Script URLを入力してください";return}if(!navigator.onLine){status.textContent="❌ オフラインです";return}status.textContent="通信確認中…";const masterId=(document.getElementById("sharedMasterId")?.value||localStorage.getItem("taikai_voice_shared_master_id_v1")||"").trim();const date=$("sDate").value||"";const payload={action:"PING",sheetId:"",masterId,year:date.slice(0,4)||String(new Date().getFullYear()),event:$("sEvent").value||"接続確認",date,mode:$("sMode").value||"MARATHON",point:$("sPoint").value||"接続確認",staff:$("sStaff").value||"",time:now(),id:"PING_"+Date.now()};fetch(endpoint,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=UTF-8"},body:JSON.stringify(payload),cache:"no-store"}).then(()=>{status.textContent="✅ GASへ通信要求を送信できました。保存先IDの入力は不要です。";}).catch(()=>{status.textContent="❌ 通信確認できませんでした。GAS URL・通信状態を確認してください。";});}
 
-$("voiceBtn").addEventListener("click",()=>listening?stopRecognition():startRecognition());
+$("voiceBtn").addEventListener("click",()=>listening?stopRecognition():startRaceReception());
 $("packModeBtn")?.addEventListener("click",()=>{packMode=!packMode;if(!packMode)packExpectedCount=0;save();render();});
 document.querySelectorAll("[data-pack-count]").forEach(b=>b.addEventListener("click",()=>setPackExpectedCount(Number(b.dataset.packCount))));
 $("v31MicTestBtn")?.addEventListener("click",runMicTest);
 $("v31FieldLockBtn")?.addEventListener("click",()=>{toggleFieldLock();renderStartFlow();});
-$("v31StartBtn")?.addEventListener("click",startRaceReception);
 $("v31QuickUndoBtn")?.addEventListener("click",quickUndoLatest);
 $("v31GapFillBtn")?.addEventListener("click",fillGapWithMuri);
 $("v31GapDismissBtn")?.addEventListener("click",()=>{clearGapFill();$("status").textContent="人数抜け補完を見送りました";});
 $("v31ExitRaceBtn")?.addEventListener("click",()=>{if(!confirm("本番モードを終了しますか？\n受付データは消えません。"))return;stopRecognition();setRaceLiveMode(false);});
-window.addEventListener("online",renderStartFlow);window.addEventListener("offline",renderStartFlow);$("registerBtn").addEventListener("click",registerManual);$("numberInput").addEventListener("keydown",e=>{if(e.key==="Enter")registerManual()});$("muriBtn").addEventListener("click",()=>add("ムリ",false,"ボタン",0,0,"ボタン"));$("cancelLastBtn").addEventListener("click",cancelLast);$("deleteNumberBtn").addEventListener("click",deleteNumber);$("deleteNumberInput").addEventListener("keydown",e=>{if(e.key==="Enter")deleteNumber()});$("manModeBtn")?.addEventListener("click",()=>{});$("settingsBtn").addEventListener("click",()=>{fillSettings();$("settingsPanel").hidden=false});$("closeSettings").addEventListener("click",()=>$("settingsPanel").hidden=true);$("saveSettings").addEventListener("click",saveSettings);$("clearRecordsBtn").addEventListener("click",clearRecords);$("testConnectionBtn").addEventListener("click",testDestination);$("sMode").addEventListener("change",()=>{const rw=$("relayGapWrap");if(rw)rw.hidden=$("sMode").value!=="RELAY";});window.addEventListener("online",()=>{render();(window.v31ReliableSend?window.v31ReliableSend():processQueue());});window.addEventListener("offline",render);setInterval(refreshClock,500);window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstall=e;$("installBtn").hidden=false});$("installBtn").addEventListener("click",async()=>{if(deferredInstall){deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;$("installBtn").hidden=true}});if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");load();window.deleteNumber=deleteNumber;
+window.addEventListener("online",renderStartFlow);window.addEventListener("offline",renderStartFlow);$("registerBtn").addEventListener("click",registerManual);$("numberInput").addEventListener("keydown",e=>{if(e.key==="Enter")registerManual()});$("muriBtn").addEventListener("click",()=>add("ムリ",false,"ボタン",0,0,"ボタン"));$("cancelLastBtn").addEventListener("click",cancelLast);$("deleteNumberBtn").addEventListener("click",deleteNumber);$("deleteNumberInput").addEventListener("keydown",e=>{if(e.key==="Enter")deleteNumber()});$("manModeBtn")?.addEventListener("click",()=>{});$("settingsBtn").addEventListener("click",()=>{fillSettings();$("settingsPanel").hidden=false});$("closeSettings").addEventListener("click",()=>$("settingsPanel").hidden=true);$("saveSettings").addEventListener("click",saveSettings);$("clearRecordsBtn").addEventListener("click",clearRecords);$("testConnectionBtn").addEventListener("click",testDestination);$("sMode").addEventListener("change",()=>{const rw=$("relayGapWrap");if(rw)rw.hidden=$("sMode").value!=="RELAY";});window.addEventListener("online",()=>{render();(window.v31ReliableSend?window.v31ReliableSend():processQueue());});window.addEventListener("offline",render);setInterval(refreshClock,500);window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstall=e;$("installBtn").hidden=false});$("installBtn").addEventListener("click",async()=>{if(deferredInstall){deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;$("installBtn").hidden=true}});if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js?v=31prod14",{updateViaCache:"none"});load();window.deleteNumber=deleteNumber;
 
 // =====================================================
 // V30：大会別記録スプレッドシート自動作成
 // =====================================================
 (function setupV30(){
-  const VERSION_TEXT="LAP NUMBER　V＝３１ DEV r3";
+  const VERSION_TEXT="LAP NUMBER　V＝３１";
   const MASTER_ID_KEY="taikai_voice_shared_master_id_v1";
 
   const style=document.createElement("style");
@@ -426,7 +428,7 @@ window.addEventListener("online",renderStartFlow);window.addEventListener("offli
   box.className="v30CreateBox";
   box.innerHTML=`
     <div class="v30CreateTitle">新規大会作成</div>
-    <div class="v30CreateHint">大会名・開催日・方式を入力して実行すると、記録用スプレッドシートを自動作成し、保存先ID設定と共有大会マスタ登録まで行います。同じ「年＋大会名」が既にある場合は新規作成しません。</div>
+    <div class="v30CreateHint">大会名・開催日・方式を入力して実行すると、記録用スプレッドシートを自動作成して共有大会マスタへ登録します。保存先IDの手入力は不要です。同じ「年＋大会名」が既にある場合は新規作成しません。</div>
     <button type="button" id="createEventSpreadsheetV30" class="v30CreateBtn">新規大会＋記録シートを作成</button>
     <div id="createEventStatusV30" class="v30CreateStatus"></div>
   `;
@@ -491,7 +493,8 @@ window.addEventListener("online",renderStartFlow);window.addEventListener("offli
       localStorage.setItem(MASTER_ID_KEY,masterId);
       localStorage.setItem("lap_number_active_master_id",masterId);
       document.getElementById("sSheetId").value="";
-      status.textContent=`📤 ${filename} の作成要求をGASへ送信しました。※この表示は「送信完了」です。作成完了は共有大会マスタの新規行で確認します。`;
+      cfg.sheetId="";
+      status.textContent=`📤 ${filename} の作成要求をGASへ送信しました。保存先IDの入力は不要です。記録送信時にGASが共有大会マスタから保存先を自動解決します。`;
       document.getElementById("saveSettings")?.click();
     }catch(e){
       status.textContent=`❌ GASへの大会作成要求を送信できませんでした：${e.message||e}。共有大会マスタID・GAS URL・通信状態を確認してください。`;
