@@ -341,10 +341,15 @@ function chooseBibAlternative(result){
     const value=parseNumber(raw);
     if(!value)continue;
     let score=confidence;
+    const normalizedRaw=raw.normalize("NFKC").replace(/\\s+/g,"");
     if(value==="MURI"||value==="CANCEL")score+=2;
-    if(/^\\d{1,5}$/.test(raw.normalize("NFKC").replace(/\\s+/g,"")))score+=0.35;
+    if(/^\\d{1,5}$/.test(normalizedRaw))score+=0.35;
     if(/[0-9０-９]/.test(raw))score+=0.15;
-    alts.push({raw,value,confidence,score,index:i});
+    // 「二万一」「2万1」など、音声エンジンが万単位を返した候補は5桁ゼッケンとして強く優先。
+    // 単なる2001を20001へ推測変換はしない（誤補正防止）。
+    const explicitMan=/万|まん|マン/.test(raw);
+    if(explicitMan && /^\\d{5}$/.test(String(value)))score+=1.25;
+    alts.push({raw,value,confidence,score,index:i,explicitMan});
   }
   if(!alts.length)return null;
   alts.sort((a,b)=>b.score-a.score||a.index-b.index);
