@@ -405,7 +405,11 @@ window.addEventListener("online",renderStartFlow);window.addEventListener("offli
     <button type="button" id="createEventSpreadsheetV30" class="v30CreateBtn">新規大会＋記録シートを作成</button>
     <div id="createEventStatusV30" class="v30CreateStatus"></div>
   `;
-  sharedBox.parentNode.insertBefore(box,sharedBox);
+  const eventInput=document.getElementById("sEvent");
+  const eventLabel=eventInput?.closest("label");
+  // 新規大会作成は大会名入力の直前に置き、入力項目と作成ボタンを同じ画面で確認しやすくする。
+  if(eventLabel?.parentNode)eventLabel.parentNode.insertBefore(box,eventLabel);
+  else sharedBox.parentNode.insertBefore(box,sharedBox);
 
   // V31 / GAS V13: Android Chrome -> one-way POST. GAS completes CREATE_EVENT server-side.
   async function createEventViaPost(params){
