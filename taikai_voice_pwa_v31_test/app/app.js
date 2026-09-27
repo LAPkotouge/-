@@ -403,7 +403,7 @@ window.addEventListener("online",renderStartFlow);window.addEventListener("offli
 // V30：大会別記録スプレッドシート自動作成
 // =====================================================
 (function setupV30(){
-  const VERSION_TEXT="LAP NUMBER　V＝３１ DEV r3";
+  const VERSION_TEXT="LAP NUMBER　V＝３１ TEST autoID";
   const MASTER_ID_KEY="taikai_voice_shared_master_id_v1";
 
   const style=document.createElement("style");
@@ -426,7 +426,7 @@ window.addEventListener("online",renderStartFlow);window.addEventListener("offli
   box.className="v30CreateBox";
   box.innerHTML=`
     <div class="v30CreateTitle">新規大会作成</div>
-    <div class="v30CreateHint">大会名・開催日・方式を入力して実行すると、記録用スプレッドシートを自動作成し、保存先ID設定と共有大会マスタ登録まで行います。同じ「年＋大会名」が既にある場合は新規作成しません。</div>
+    <div class="v30CreateHint">大会名・開催日・方式を入力して実行すると、記録用スプレッドシートを自動作成して共有大会マスタへ登録します。保存先IDの手入力は不要です。同じ「年＋大会名」が既にある場合は新規作成しません。</div>
     <button type="button" id="createEventSpreadsheetV30" class="v30CreateBtn">新規大会＋記録シートを作成</button>
     <div id="createEventStatusV30" class="v30CreateStatus"></div>
   `;
@@ -491,7 +491,8 @@ window.addEventListener("online",renderStartFlow);window.addEventListener("offli
       localStorage.setItem(MASTER_ID_KEY,masterId);
       localStorage.setItem("lap_number_active_master_id",masterId);
       document.getElementById("sSheetId").value="";
-      status.textContent=`📤 ${filename} の作成要求をGASへ送信しました。※この表示は「送信完了」です。作成完了は共有大会マスタの新規行で確認します。`;
+      cfg.sheetId="";
+      status.textContent=`📤 ${filename} の作成要求をGASへ送信しました。保存先IDの入力は不要です。記録送信時にGASが共有大会マスタから保存先を自動解決します。`;
       document.getElementById("saveSettings")?.click();
     }catch(e){
       status.textContent=`❌ GASへの大会作成要求を送信できませんでした：${e.message||e}。共有大会マスタID・GAS URL・通信状態を確認してください。`;
