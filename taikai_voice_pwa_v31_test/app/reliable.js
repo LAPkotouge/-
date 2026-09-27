@@ -14,7 +14,11 @@
       while(sendQueue.length&&navigator.onLine){
         const item=sendQueue[0];
         try{
-          await fetch(String(cfg.endpoint).trim(),{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload(item))});
+          const body=JSON.stringify(payload(item));
+          // 同一記録IDを2回送信。GAS側の記録ID重複防止を利用し、通信取りこぼし耐性を上げる。
+          await fetch(String(cfg.endpoint).trim(),{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=UTF-8'},body});
+          await new Promise(resolve=>setTimeout(resolve,220));
+          await fetch(String(cfg.endpoint).trim(),{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=UTF-8'},body});
           sendQueue.shift(); save(); render();
         }catch(e){break;}
       }
@@ -23,6 +27,9 @@
       if(sendQueue.length&&navigator.onLine)setTimeout(drain,100);
     }
   }
+  // restore.js が先に定義した processQueue もここで一本化する。
+  // 2本の送信処理が同じsendQueueをshiftすると未送信レコードを飛ばす競合が起きるため。
+  processQueue=drain;
   window.v31ReliableSend=drain;
   window.v31ProcessQueue=drain;
   setInterval(()=>{if(sendQueue.length&&navigator.onLine)drain();},250);
