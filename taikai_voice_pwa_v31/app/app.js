@@ -7,7 +7,7 @@ const KEY_SEQ = "taikai_voice_seq_v1";
 const KEY_PACK = "lap_number_v31_pack_mode";
 const KEY_FIELD_LOCK = "lap_number_v31_field_lock";
 
-let cfg = { event:"大会名未設定", date:"", mode:"MARATHON", point:"地点未設定", staff:"", top:"", relayGap:1, endpoint:"", sheetId:"", sheetName:"" };
+let cfg = { event:"大会名未設定", date:"", mode:"MARATHON", bibRange:"MIXED", point:"地点未設定", staff:"", top:"", relayGap:1, endpoint:"", sheetId:"", sheetName:"" };
 let records = [], sendQueue = [], ok = 0, muri = 0, recognition = null, listening = false, restartTimer = null, deferredInstall = null, isSending = false, manMode = false, seqCounter = 0;
 let lastSpeech = "—";
 let speechCandidateTs = 0;
@@ -24,11 +24,12 @@ let pendingGapCaptureTs = 0;
 function load(){
   try{ Object.assign(cfg, JSON.parse(localStorage.getItem(KEY_CFG)||"{}")); }catch{}
   cfg.relayGap = Math.max(1, Math.min(60, Number(cfg.relayGap)||1));
+  cfg.bibRange = ["NORMAL","MAN","MIXED"].includes(cfg.bibRange) ? cfg.bibRange : "MIXED";
   cfg.sheetId = String(cfg.sheetId||"").trim();
   cfg.sheetName = String(cfg.sheetName||"").trim();
   try{ records = JSON.parse(localStorage.getItem(KEY_REC)||"[]"); }catch{ records=[]; }
   try{ sendQueue = JSON.parse(localStorage.getItem(KEY_QUEUE)||"[]"); }catch{ sendQueue=[]; }
-  manMode = localStorage.getItem(KEY_MAN)==="1";
+  manMode = false; // V31: 万台は自動判定。旧端末設定は使用しない。
   packMode = localStorage.getItem(KEY_PACK)==="1";
   fieldLock = localStorage.getItem(KEY_FIELD_LOCK)==="1";
   seqCounter = Number(localStorage.getItem(KEY_SEQ)||0) || 0;
@@ -51,7 +52,7 @@ function save(){
   localStorage.setItem(KEY_CFG, JSON.stringify(cfg));
   localStorage.setItem(KEY_REC, JSON.stringify(records));
   localStorage.setItem(KEY_QUEUE, JSON.stringify(sendQueue));
-  localStorage.setItem(KEY_MAN, manMode ? "1" : "0");
+  localStorage.removeItem(KEY_MAN);
   localStorage.setItem(KEY_SEQ, String(seqCounter));
   localStorage.setItem(KEY_PACK, packMode ? "1" : "0");
   localStorage.setItem(KEY_FIELD_LOCK, fieldLock ? "1" : "0");
@@ -203,8 +204,8 @@ function render(){
   $("status").textContent=(listening?"●音声受付中":"停止中")+(sendQueue.length?` ⚠未送信${sendQueue.length}件`:""); $("status").classList.toggle("voiceActiveStatus",listening);
   const pb=$("packModeBtn");if(pb){pb.textContent=packMode?"集団モード ON":"集団モード OFF";pb.classList.toggle("on",packMode);}
   const ph=$("packModeHint");if(ph)ph.textContent=packMode?"連続番号をまとめて読み上げ可":"通常受付";
-  const b=$("manModeBtn"); if(b){b.hidden=cfg.mode==="EKIDEN";b.innerHTML=`<span>万台</span><span>モード</span>`;b.style.background=manMode?"#0b57d0":"#fff";b.style.color=manMode?"#fff":"#c64b14";b.title=manMode?"万台番号モード ON":"万台番号モード OFF";}
-  const mh=$("manModeHint");if(mh)mh.hidden=cfg.mode==="EKIDEN"; const rw=$("relayGapWrap");if(rw)rw.hidden=cfg.mode!=="RELAY"; renderFieldAlert(); renderFieldLock(); renderStartFlow(); renderPackCountControls(); renderLiveCounters();
+  const b=$("manModeBtn"); if(b)b.hidden=true;
+  const mh=$("manModeHint");if(mh)mh.hidden=true; const rw=$("relayGapWrap");if(rw)rw.hidden=cfg.mode!=="RELAY"; renderFieldAlert(); renderFieldLock(); renderStartFlow(); renderPackCountControls(); renderLiveCounters();
 }
 function refreshClock(){ if($("currentTime"))$("currentTime").textContent=now(); if($("countdown"))$("countdown").textContent=topRemain(); }
 
@@ -215,7 +216,13 @@ const jpDigit={零:0,〇:0,一:1,二:2,三:3,四:4,五:5,六:6,七:7,八:8,九:9
 function kanaDigitsToNumber(s){ let x=normalizeSpeech(s),out="",keys=Object.keys(digitKana).sort((a,b)=>b.length-a.length); while(x){let found=false;for(const k of keys)if(x.startsWith(k)){out+=digitKana[k];x=x.slice(k.length);found=true;break}if(!found)return null}if(!out||out.length>5)return null;const n=Number(out);return n>=1&&n<=99999?n:null; }
 function jpToNumber(s){ let x=normalizeSpeech(s);Object.keys(jpRead).sort((a,b)=>b.length-a.length).forEach(k=>x=x.replaceAll(k,jpRead[k]));let total=0,section=0,num=0,has=false;for(const ch of x){if(jpDigit[ch]!==undefined){num=jpDigit[ch];has=true}else if(ch==="十"||ch==="百"||ch==="千"){section+=(num||1)*({十:10,百:100,千:1000}[ch]);num=0;has=true}else if(ch==="万"){section+=num;total+=section*10000;section=0;num=0;has=true}else return null}return has?total+section+num:null; }
 function digitTextToNumber(s){ const d=s.replace(/[^0-9]/g,"");if(!d)return null;const n=Number(d);return d&&n>=1&&n<=99999?n:null; }
-function parseNumber(raw){ const s=normalizeSpeech(raw); if(/むり|無理/i.test(s))return "MURI"; if(/キャンセル|きゃんせる|取り消し|とりけし|取消|戻す|もどす/.test(s))return "CANCEL"; if(cfg.mode==="EKIDEN"){let m=s.match(/(\d{1,4})-(\d{1,2})/);if(!m)m=s.match(/(\d{1,4}).{0,3}?(\d{1,2})区/);if(!m)m=s.match(/(\d{1,4})の(\d{1,2})/);if(!m)return null;const a=Number(m[1]),b=Number(m[2]);return a>=1&&a<=9999&&b>=1&&b<=25?`${a}-${b}`:null;} if(manMode){const n=digitTextToNumber(s)??kanaDigitsToNumber(s);return n&&n>=10000?String(n):null;} const candidates=[];const d=digitTextToNumber(s);if(d!==null)candidates.push({n:d,score:1});const kd=kanaDigitsToNumber(s);if(kd!==null)candidates.push({n:kd,score:8});const j=jpToNumber(s);if(j!==null)candidates.push({n:j,score:/万|千|百|十/.test(s)?10:2});candidates.sort((a,b)=>b.score-a.score);for(const c of candidates)if(c.n>=1&&c.n<=99999)return String(c.n);return null; }
+function bibInRange(n){
+  n=Number(n); if(!Number.isFinite(n))return false;
+  if(cfg.bibRange==="NORMAL")return n>=1&&n<=9999;
+  if(cfg.bibRange==="MAN")return n>=10000&&n<=99999;
+  return n>=1&&n<=99999;
+}
+function parseNumber(raw){ const s=normalizeSpeech(raw); if(/むり|無理/i.test(s))return "MURI"; if(/キャンセル|きゃんせる|取り消し|とりけし|取消|戻す|もどす/.test(s))return "CANCEL"; if(cfg.mode==="EKIDEN"){let m=s.match(/(\d{1,4})-(\d{1,2})/);if(!m)m=s.match(/(\d{1,4}).{0,3}?(\d{1,2})区/);if(!m)m=s.match(/(\d{1,4})の(\d{1,2})/);if(!m)return null;const a=Number(m[1]),b=Number(m[2]);return a>=1&&a<=9999&&b>=1&&b<=25?`${a}-${b}`:null;} const candidates=[];const d=digitTextToNumber(s);if(d!==null)candidates.push({n:d,score:1});const kd=kanaDigitsToNumber(s);if(kd!==null)candidates.push({n:kd,score:8});const j=jpToNumber(s);if(j!==null)candidates.push({n:j,score:/万|千|百|十/.test(s)?10:2});candidates.sort((a,b)=>b.score-a.score);for(const c of candidates)if(bibInRange(c.n))return String(c.n);return null; }
 function relayLast(value){
   // V31: old records may have been created before mode was stored consistently.
   // For relay reception, find the latest valid same-number record in the current event/point.
@@ -250,7 +257,7 @@ function cancelLast(){ const i=records.findIndex(r=>!r.cancelled);if(i<0){$("sta
 async function deleteNumber(){const input=$("deleteNumberInput");if(!input)return;const target=parseNumber(input.value.trim());if(!target||target==="MURI"||target==="CANCEL"){alert(cfg.mode==="EKIDEN"?"削除する駅伝番号を 125-3 の形式で入力してください。":"削除するナンバーを1～99999で入力してください。");input.focus();return;}const i=records.findIndex(r=>!r.cancelled&&!r.invalidGap&&r.value===target);if(i<0){$("status").textContent=`「${target}」は現在のアプリ内登録にありません`;input.select();return;}const r=records[i],lapText=r.mode==="RELAY"&&r.lap?`（${r.lap}周目）`:"";if(!confirm(`「${target}」${lapText}を削除しますか？\n\n最も新しい登録1件だけを削除します。\nこの操作は元に戻せません。`))return;r.cancelled=true;r.cancelledAt=now();r.cancelledBy="番号指定削除";sendQueue=sendQueue.filter(q=>q.id!==r.id);save();render();input.value="";$("status").textContent=`「${target}」${lapText}を削除しました`;if(cfg.endpoint&&navigator.onLine){try{await fetch(cfg.endpoint,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"DELETE",id:r.id||"",seqNo:r.seqNo||"",point:r.point||cfg.point||"",value:r.value||"",mode:r.mode||cfg.mode||"",event:r.event||cfg.event||"",date:r.date||cfg.date||"",staff:r.staff||cfg.staff||"",lap:r.lap||"",time:r.time||"",sheetId:r.sheetId||cfg.sheetId||""})});$("status").textContent=`「${target}」削除送信完了`;}catch{$("status").textContent=`「${target}」はアプリから削除済・シート削除送信失敗`;}}input.focus();}
 
 async function processQueue(){if(isSending||!sendQueue.length||!cfg.endpoint||!navigator.onLine)return;isSending=true;while(sendQueue.length&&navigator.onLine){const item=sendQueue[0];try{const payload={...item,sheetId:item.sheetId||cfg.sheetId||""};const c=new AbortController(),t=setTimeout(()=>c.abort(),5000);await fetch(cfg.endpoint,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),signal:c.signal});clearTimeout(t);sendQueue.shift();save();render();}catch{break}}isSending=false;}
-function registerManual(){const v=parseNumber($("numberInput").value.trim());if(v==="CANCEL"){cancelLast();$("numberInput").value="";return}if(!v){alert(cfg.mode==="RELAY"?"1～99999の番号を入力してください。":manMode?"万台モードでは10,000～99,999を入力するか1桁ずつ読んでください。":cfg.mode==="EKIDEN"?"駅伝は 125-3（1～9999×1～25区）で入力してください。":"1～99999の番号を入力してください。");return}add(v==="MURI"?"ムリ":v,v!=="MURI",$("numberInput").value.trim(),0,0,"手入力");$("numberInput").value="";$("numberInput").focus();}
+function registerManual(){const v=parseNumber($("numberInput").value.trim());if(v==="CANCEL"){cancelLast();$("numberInput").value="";return}if(!v){alert(cfg.mode==="EKIDEN"?"駅伝は 125-3（1～9999×1～25区）で入力してください。":"1～99999の番号を入力してください。");return}add(v==="MURI"?"ムリ":v,v!=="MURI",$("numberInput").value.trim(),0,0,"手入力");$("numberInput").value="";$("numberInput").focus();}
 
 function recognitionQuality(conf){
   const n=Number(conf)||0;
@@ -264,11 +271,11 @@ function runMicTest(){
   const state=$("v31MicState"),quality=$("v31Quality"),result=$("v31MicTestResult"),btn=$("v31MicTestBtn");
   if(!SR){state.textContent="非対応";quality.textContent="⚠";result.textContent="このブラウザでは音声認識を使用できません。";return;}
   if(listening){result.textContent="本番音声受付を停止してから端末テストしてください。";return;}
-  const test=new SR();test.lang="ja-JP";test.interimResults=false;test.continuous=false;
+  const test=new SR();test.lang="ja-JP";test.interimResults=false;test.continuous=false;test.maxAlternatives=5;
   let started=0;
   btn.disabled=true;state.textContent="待機中";quality.textContent="—";result.textContent="「1234」など、実際のゼッケン番号のように読み上げてください。";
   test.onspeechstart=()=>{started=Date.now();state.textContent="音声検知";};
-  test.onresult=e=>{const alt=e.results[0][0],raw=alt.transcript,conf=Number(alt.confidence)||0,v=parseNumber(raw),q=recognitionQuality(conf),delay=started?Date.now()-started:0;micTestPassed=!!v;state.textContent=v?"認識OK":"認識注意";quality.textContent=q.mark+" "+q.label;result.textContent=v?`認識：「${raw}」 → ナンバー ${v} ／ 認識時間 約${delay}ms`:`認識：「${raw}」 → ナンバー化できませんでした`;};
+  test.onresult=e=>{const resultSet=e.results[0],best=chooseBibAlternative(resultSet),alt=best||resultSet[0],raw=best?best.raw:alt.transcript,conf=Number(best?best.confidence:alt.confidence)||0,v=best?best.value:parseNumber(raw),q=recognitionQuality(conf),delay=started?Date.now()-started:0;micTestPassed=!!v;state.textContent=v?"認識OK":"認識注意";quality.textContent=q.mark+" "+q.label;result.textContent=v?`認識：「${raw}」 → ナンバー ${v} ／ 認識時間 約${delay}ms`:`認識：「${raw}」 → ナンバー化できませんでした`;};
   test.onerror=e=>{state.textContent="エラー";quality.textContent="⚠";result.textContent="音声認識エラー："+e.error;};
   test.onend=()=>{btn.disabled=false;renderStartFlow();};
   try{test.start();}catch(e){btn.disabled=false;state.textContent="開始失敗";result.textContent="音声テストを開始できませんでした。";}
@@ -333,14 +340,50 @@ function addPack(values,rawSpeech,captureTs,confidence=0){
   $("status").textContent=`集団受付：${unique.length}人（${unique.join("・")}）`;
   return true;
 }
-function startRecognition(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){alert("このブラウザは音声認識に対応していません。Chromeを使用してください。");return}recognition=new SR();recognition.lang="ja-JP";recognition.interimResults=false;recognition.continuous=false;recognition.onaudiostart=()=>{speechCandidateTs=Date.now();};
+function chooseBibAlternative(result){
+  const alts=[];
+  const limit=Math.min(result.length||0,5);
+  for(let i=0;i<limit;i++){
+    const a=result[i],raw=String(a.transcript||"").trim(),confidence=Number(a.confidence)||0;
+    let value=parseNumber(raw);
+    // 万台大会では音声側が 20001→2001/21 のように0を落とすことがある。
+    // 受付番号帯が10,000以上と確定している時だけ、安全側に限定して0補完候補を作る。
+    if(!value && cfg.bibRange==="MAN"){
+      const n=digitTextToNumber(normalizeSpeech(raw)) ?? kanaDigitsToNumber(normalizeSpeech(raw));
+      if(n>=1&&n<=9999){
+        const s=String(n), candidates10k=[];
+        for(let z=1;z<=5-s.length;z++){
+          const v=Number(s[0]+"0".repeat(z)+s.slice(1));
+          if(v>=10000&&v<=99999)candidates10k.push(v);
+        }
+        if(candidates10k.length)value=String(candidates10k[candidates10k.length-1]);
+      }
+    }
+    if(!value)continue;
+    let score=confidence;
+    const normalizedRaw=raw.normalize("NFKC").replace(/\\s+/g,"");
+    if(value==="MURI"||value==="CANCEL")score+=2;
+    if(/^\\d{1,5}$/.test(normalizedRaw))score+=0.35;
+    if(/[0-9０-９]/.test(raw))score+=0.15;
+    // 「二万一」「2万1」など、音声エンジンが万単位を返した候補は5桁ゼッケンとして強く優先。
+    // 単なる2001を20001へ推測変換はしない（誤補正防止）。
+    const explicitMan=/万|まん|マン/.test(raw);
+    if(explicitMan && /^\\d{5}$/.test(String(value)))score+=1.25;
+    alts.push({raw,value,confidence,score,index:i,explicitMan});
+  }
+  if(!alts.length)return null;
+  alts.sort((a,b)=>b.score-a.score||a.index-b.index);
+  return alts[0];
+}
+
+function startRecognition(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){alert("このブラウザは音声認識に対応していません。Chromeを使用してください。");return}recognition=new SR();recognition.lang="ja-JP";recognition.interimResults=false;recognition.continuous=false;recognition.maxAlternatives=5;recognition.onaudiostart=()=>{speechCandidateTs=Date.now();};
 recognition.onspeechstart=()=>{recognition._speechStartTs=Date.now();};
-recognition.onresult=e=>{const alt=e.results[0][0];const confidence=Number(alt.confidence)||0;const captureTs=recognition._speechStartTs||speechCandidateTs||Date.now();recognition._speechStartTs=0;speechCandidateTs=0;lastRecognitionConfidence=confidence;lastRecognitionDelayMs=Math.max(0,Date.now()-captureTs);const t=alt.transcript;showRecognitionRaw(t);
+recognition.onresult=e=>{const result=e.results[0];const best=chooseBibAlternative(result);const alt=best||result[0];const confidence=Number(best?best.confidence:alt.confidence)||0;const captureTs=recognition._speechStartTs||speechCandidateTs||Date.now();recognition._speechStartTs=0;speechCandidateTs=0;lastRecognitionConfidence=confidence;lastRecognitionDelayMs=Math.max(0,Date.now()-captureTs);const t=best?best.raw:alt.transcript;showRecognitionRaw(t);
 if(packMode){const pack=parsePackNumbers(t);if(pack.length>=2){addPack(pack,t,captureTs,confidence);return;}if(packExpectedCount>=2&&pack.length===1){add(pack[0],true,t,captureTs,confidence,"音声認識");warnPackCountMismatch(packExpectedCount,1,pack,captureTs);packExpectedCount=0;renderPackCountControls();return;}}
-const v=parseNumber(t);if(v==="CANCEL")cancelLast();else if(v==="MURI")add("ムリ",false,t,captureTs,confidence,"音声認識");else if(v)add(v,true,t,captureTs,confidence,"音声認識");else $("status").textContent=`認識できません：「${t}」`;};recognition.onerror=e=>{speechCandidateTs=0;if(e.error!=="aborted")$("status").textContent="音声認識エラー："+e.error;};recognition.onend=()=>{if(listening){clearTimeout(restartTimer);restartTimer=setTimeout(()=>{try{recognition.start()}catch{}},180)}};listening=true;render();try{recognition.start()}catch{}}
+const v=best?best.value:parseNumber(t);if(v==="CANCEL")cancelLast();else if(v==="MURI")add("ムリ",false,t,captureTs,confidence,"音声認識");else if(v)add(v,true,t,captureTs,confidence,"音声認識");else $("status").textContent=`認識できません：「${t}」`;};recognition.onerror=e=>{speechCandidateTs=0;if(e.error!=="aborted")$("status").textContent="音声認識エラー："+e.error;};recognition.onend=()=>{if(listening){clearTimeout(restartTimer);restartTimer=setTimeout(()=>{try{recognition.start()}catch{}},180)}};listening=true;render();try{recognition.start()}catch{}}
 function stopRecognition(){listening=false;clearTimeout(restartTimer);try{recognition&&recognition.abort()}catch{}render()}
-function fillSettings(){$("sEvent").value=cfg.event==="大会名未設定"?"":cfg.event;$("sDate").value=cfg.date;$("sMode").value=cfg.mode;$("sPoint").value=cfg.point==="地点未設定"?"":cfg.point;$("sStaff").value=cfg.staff;$("sTop").value=cfg.top;$("sRelayGap").value=cfg.relayGap;$("sEndpoint").value=cfg.endpoint;$("sSheetId").value=cfg.sheetId||"";const rw=$("relayGapWrap");if(rw)rw.hidden=cfg.mode!=="RELAY";const cs=$("connectionStatus");if(cs)cs.textContent=cfg.sheetName?`現在の保存先：${cfg.sheetName}`:"";}
-function saveSettings(){cfg.event=$("sEvent").value||"大会名未設定";cfg.date=$("sDate").value;cfg.mode=$("sMode").value;cfg.point=$("sPoint").value||"地点未設定";cfg.staff=$("sStaff").value;cfg.top=$("sTop").value;cfg.relayGap=Math.max(1,Math.min(60,Number($("sRelayGap").value)||1));cfg.endpoint=$("sEndpoint").value.trim();cfg.sheetId=$("sSheetId").value.trim();cfg.sheetName="";save();$("settingsPanel").hidden=true;render();processQueue();}
+function fillSettings(){$("sEvent").value=cfg.event==="大会名未設定"?"":cfg.event;$("sDate").value=cfg.date;$("sMode").value=cfg.mode;if($("sBibRange"))$("sBibRange").value=cfg.bibRange||"MIXED";$("sPoint").value=cfg.point==="地点未設定"?"":cfg.point;$("sStaff").value=cfg.staff;$("sTop").value=cfg.top;$("sRelayGap").value=cfg.relayGap;$("sEndpoint").value=cfg.endpoint;$("sSheetId").value=cfg.sheetId||"";const rw=$("relayGapWrap");if(rw)rw.hidden=cfg.mode!=="RELAY";const cs=$("connectionStatus");if(cs)cs.textContent=cfg.sheetName?`現在の保存先：${cfg.sheetName}`:"";}
+function saveSettings(){cfg.event=$("sEvent").value||"大会名未設定";cfg.date=$("sDate").value;cfg.mode=$("sMode").value;cfg.bibRange=$("sBibRange")?.value||"MIXED";cfg.point=$("sPoint").value||"地点未設定";cfg.staff=$("sStaff").value;cfg.top=$("sTop").value;cfg.relayGap=Math.max(1,Math.min(60,Number($("sRelayGap").value)||1));cfg.endpoint=$("sEndpoint").value.trim();cfg.sheetId=$("sSheetId").value.trim();cfg.sheetName="";save();$("settingsPanel").hidden=true;render();processQueue();}
 function clearRecords(){if(!confirm("この端末の登録データを全て消去します。No.も1から再開します。よろしいですか？"))return;records=[];sendQueue=[];seqCounter=0;lastSpeech="—";save();render();}
 function testDestination(){const status=$("connectionStatus"),endpoint=$("sEndpoint").value.trim(),sheetId=$("sSheetId").value.trim();if(!endpoint){status.textContent="❌ Google Apps Script URLを入力してください";return}if(!sheetId){status.textContent="❌ 保存先スプレッドシートIDを入力してください";return}status.textContent="接続確認中…";const payload={action:"PING",sheetId,event:$("sEvent").value||"接続確認",date:$("sDate").value||"",mode:$("sMode").value||"MARATHON",point:$("sPoint").value||"接続確認",staff:$("sStaff").value||"",time:now(),id:"PING_"+Date.now()};const c=new AbortController(),timer=setTimeout(()=>c.abort(),15000);fetch(endpoint,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),signal:c.signal}).then(()=>{clearTimeout(timer);cfg.sheetId=sheetId;cfg.sheetName="";status.textContent="✅ 接続要求を送信できました。保存後、テスト番号を1件登録して確認してください。";}).catch(()=>{clearTimeout(timer);status.textContent="❌ 接続確認できませんでした。URL・ID・通信状態を確認してください。";});}
 
@@ -354,13 +397,13 @@ $("v31QuickUndoBtn")?.addEventListener("click",quickUndoLatest);
 $("v31GapFillBtn")?.addEventListener("click",fillGapWithMuri);
 $("v31GapDismissBtn")?.addEventListener("click",()=>{clearGapFill();$("status").textContent="人数抜け補完を見送りました";});
 $("v31ExitRaceBtn")?.addEventListener("click",()=>{if(!confirm("本番モードを終了しますか？\n受付データは消えません。"))return;stopRecognition();setRaceLiveMode(false);});
-window.addEventListener("online",renderStartFlow);window.addEventListener("offline",renderStartFlow);$("registerBtn").addEventListener("click",registerManual);$("numberInput").addEventListener("keydown",e=>{if(e.key==="Enter")registerManual()});$("muriBtn").addEventListener("click",()=>add("ムリ",false,"ボタン",0,0,"ボタン"));$("cancelLastBtn").addEventListener("click",cancelLast);$("deleteNumberBtn").addEventListener("click",deleteNumber);$("deleteNumberInput").addEventListener("keydown",e=>{if(e.key==="Enter")deleteNumber()});$("manModeBtn").addEventListener("click",()=>{manMode=!manMode;save();render();});$("settingsBtn").addEventListener("click",()=>{fillSettings();$("settingsPanel").hidden=false});$("closeSettings").addEventListener("click",()=>$("settingsPanel").hidden=true);$("saveSettings").addEventListener("click",saveSettings);$("clearRecordsBtn").addEventListener("click",clearRecords);$("testConnectionBtn").addEventListener("click",testDestination);$("sMode").addEventListener("change",()=>{const rw=$("relayGapWrap");if(rw)rw.hidden=$("sMode").value!=="RELAY";});window.addEventListener("online",()=>{render();(window.v31ReliableSend?window.v31ReliableSend():processQueue());});window.addEventListener("offline",render);setInterval(refreshClock,500);window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstall=e;$("installBtn").hidden=false});$("installBtn").addEventListener("click",async()=>{if(deferredInstall){deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;$("installBtn").hidden=true}});if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");load();window.deleteNumber=deleteNumber;
+window.addEventListener("online",renderStartFlow);window.addEventListener("offline",renderStartFlow);$("registerBtn").addEventListener("click",registerManual);$("numberInput").addEventListener("keydown",e=>{if(e.key==="Enter")registerManual()});$("muriBtn").addEventListener("click",()=>add("ムリ",false,"ボタン",0,0,"ボタン"));$("cancelLastBtn").addEventListener("click",cancelLast);$("deleteNumberBtn").addEventListener("click",deleteNumber);$("deleteNumberInput").addEventListener("keydown",e=>{if(e.key==="Enter")deleteNumber()});$("manModeBtn")?.addEventListener("click",()=>{});$("settingsBtn").addEventListener("click",()=>{fillSettings();$("settingsPanel").hidden=false});$("closeSettings").addEventListener("click",()=>$("settingsPanel").hidden=true);$("saveSettings").addEventListener("click",saveSettings);$("clearRecordsBtn").addEventListener("click",clearRecords);$("testConnectionBtn").addEventListener("click",testDestination);$("sMode").addEventListener("change",()=>{const rw=$("relayGapWrap");if(rw)rw.hidden=$("sMode").value!=="RELAY";});window.addEventListener("online",()=>{render();(window.v31ReliableSend?window.v31ReliableSend():processQueue());});window.addEventListener("offline",render);setInterval(refreshClock,500);window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstall=e;$("installBtn").hidden=false});$("installBtn").addEventListener("click",async()=>{if(deferredInstall){deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;$("installBtn").hidden=true}});if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");load();window.deleteNumber=deleteNumber;
 
 // =====================================================
 // V30：大会別記録スプレッドシート自動作成
 // =====================================================
 (function setupV30(){
-  const VERSION_TEXT="LAP NUMBER　V＝３１";
+  const VERSION_TEXT="LAP NUMBER　V＝３１ DEV r3";
   const MASTER_ID_KEY="taikai_voice_shared_master_id_v1";
 
   const style=document.createElement("style");
@@ -387,53 +430,26 @@ window.addEventListener("online",renderStartFlow);window.addEventListener("offli
     <button type="button" id="createEventSpreadsheetV30" class="v30CreateBtn">新規大会＋記録シートを作成</button>
     <div id="createEventStatusV30" class="v30CreateStatus"></div>
   `;
-  sharedBox.parentNode.insertBefore(box,sharedBox);
+  const eventInput=document.getElementById("sEvent");
+  const eventLabel=eventInput?.closest("label");
+  // 新規大会作成は大会名入力の直前に置き、入力項目と作成ボタンを同じ画面で確認しやすくする。
+  if(eventLabel?.parentNode)eventLabel.parentNode.insertBefore(box,eventLabel);
+  else sharedBox.parentNode.insertBefore(box,sharedBox);
 
-  // V31: CREATE_EVENT is sent by POST, then MASTER_LIST is polled by a short JSONP GET.
-  // This avoids Android Chrome failures seen with the long CREATE_EVENT JSONP URL.
-  function jsonpMasterList(endpoint,masterId,year){
-    return new Promise((resolve,reject)=>{
-      const cb="lapMasterCb_"+Date.now()+"_"+Math.random().toString(36).slice(2,6);
-      const qs=new URLSearchParams({action:"MASTER_LIST",masterId,year:String(year||""),callback:cb,_:String(Date.now())});
-      const script=document.createElement("script");
-      const timer=setTimeout(()=>{cleanup();reject(new Error("timeout"));},15000);
-      function cleanup(){clearTimeout(timer);try{delete window[cb];}catch{}script.remove();}
-      window[cb]=data=>{cleanup();resolve(data);};
-      script.onerror=()=>{cleanup();reject(new Error("network"));};
-      script.async=true;
-      script.src=endpoint+(endpoint.includes("?")?"&":"?")+qs.toString();
-      document.head.appendChild(script);
-    });
-  }
-
+  // V31 / GAS V13: Android Chrome -> one-way POST. GAS completes CREATE_EVENT server-side.
   async function createEventViaPost(params){
     const endpoint=(document.getElementById("sEndpoint")?.value||cfg.endpoint||"").trim();
     if(!endpoint)throw new Error("Google Apps Script URLが未設定です");
-
+    // Android Chromeで確実にGASへ到達させる一方向POST。
+    // text/plain は no-cors のCORS-safelisted Content-Typeなのでpreflightを発生させない。
     await fetch(endpoint,{
       method:"POST",
       mode:"no-cors",
-      cache:"no-store",
-      headers:{"Content-Type":"text/plain;charset=utf-8"},
-      body:JSON.stringify({...params,action:"CREATE_EVENT"})
+      headers:{"Content-Type":"text/plain;charset=UTF-8"},
+      body:JSON.stringify(params),
+      cache:"no-store"
     });
-
-    // GAS may still be creating the spreadsheet after the POST dispatch returns.
-    // Poll the shared master until the new event appears.
-    let lastError=null;
-    for(let attempt=0;attempt<12;attempt++){
-      if(attempt)await new Promise(r=>setTimeout(r,1000));
-      try{
-        const res=await jsonpMasterList(endpoint,params.masterId,params.year);
-        if(res&&res.ok&&Array.isArray(res.items)){
-          const found=res.items.find(x=>String(x.year||"")===String(params.year||"")&&String(x.event||"")===String(params.event||""));
-          if(found&&found.sheetId){
-            return {ok:true,exists:attempt===0,sheetId:String(found.sheetId),sheetName:String(found.event||params.event||""),url:"https://docs.google.com/spreadsheets/d/"+String(found.sheetId)+"/edit"};
-          }
-        }
-      }catch(e){lastError=e;}
-    }
-    throw lastError||new Error("作成結果を共有大会マスタで確認できませんでした");
+    return {ok:true,queued:true};
   }
 
   async function createEventSpreadsheetV30(){
@@ -470,21 +486,15 @@ window.addEventListener("online",renderStartFlow);window.addEventListener("offli
         relayGap,
         endpoint
       });
-      if(!res||!res.ok)throw new Error(res&&res.error?res.error:"作成に失敗しました");
-      if(res.exists){
-        status.textContent=`⚠ ${year}｜${event} は既に共有大会マスタに登録されています。新しいスプレッドシートは作成していません。`;
-        if(res.sheetId)document.getElementById("sSheetId").value=res.sheetId;
-      }else{
-        document.getElementById("sSheetId").value=res.sheetId||"";
-        if(document.getElementById("profileYear"))document.getElementById("profileYear").value=year;
-        if(document.getElementById("sharedYear"))document.getElementById("sharedYear").value=year;
-        localStorage.setItem(MASTER_ID_KEY,masterId);
-        status.textContent=`✅ ${res.sheetName||filename} を作成しました。保存先IDを自動設定し、共有大会マスタへ登録しました。端末設定も自動保存します。`;
-        document.getElementById("saveSettings")?.click();
-      }
-      setTimeout(()=>document.getElementById("refreshSharedMaster")?.click(),300);
+      if(document.getElementById("profileYear"))document.getElementById("profileYear").value=year;
+      if(document.getElementById("sharedYear"))document.getElementById("sharedYear").value=year;
+      localStorage.setItem(MASTER_ID_KEY,masterId);
+      localStorage.setItem("lap_number_active_master_id",masterId);
+      document.getElementById("sSheetId").value="";
+      status.textContent=`📤 ${filename} の作成要求をGASへ送信しました。※この表示は「送信完了」です。作成完了は共有大会マスタの新規行で確認します。`;
+      document.getElementById("saveSettings")?.click();
     }catch(e){
-      status.textContent=`❌ 新規大会を作成できませんでした：${e.message||e}。Apps Script V5・共有大会マスタID・通信状態を確認してください。`;
+      status.textContent=`❌ GASへの大会作成要求を送信できませんでした：${e.message||e}。共有大会マスタID・GAS URL・通信状態を確認してください。`;
     }finally{
       btn.disabled=false;
     }
