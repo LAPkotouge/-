@@ -1,4 +1,4 @@
-const CACHE = "lap-number-v31-speech3";
+const CACHE = "lap-number-v31-prod-pwa1";
 
 self.addEventListener("install", event => {
   event.waitUntil(
@@ -8,7 +8,7 @@ self.addEventListener("install", event => {
         "./app/app.js?v=31v13speech3",
         "./app/restore.js?v=30r7",
         "./app/reliable.js?v=31v13race1",
-        "./manifest.json?v=31speech3"
+        "./manifest.json?v=31pwa1"
         "./icon-192.svg",
         "./icon-512.svg"
       ]))
