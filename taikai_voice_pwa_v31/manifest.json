@@ -1,1 +1,12 @@
-{"name":"LAP NUMBER","short_name":"LAP NUMBER","start_url":"./","display":"standalone","background_color":"#f4f6f8","theme_color":"#0b57d0","lang":"ja","icons":[]}
+{
+  "name": "LAP NUMBER",
+  "short_name": "LAP NUMBER",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f6f8",
+  "theme_color": "#0b57d0",
+  "lang": "ja",
+  "description": "ゼッケンナンバー受付・管理システム",
+  "icons": []
+}
