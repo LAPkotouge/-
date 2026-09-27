@@ -275,7 +275,7 @@ function runMicTest(){
   let started=0;
   btn.disabled=true;state.textContent="待機中";quality.textContent="—";result.textContent="「1234」など、実際のゼッケン番号のように読み上げてください。";
   test.onspeechstart=()=>{started=Date.now();state.textContent="音声検知";};
-  test.onresult=e=>{const alt=e.results[0][0],raw=alt.transcript,conf=Number(alt.confidence)||0,v=parseNumber(raw),q=recognitionQuality(conf),delay=started?Date.now()-started:0;micTestPassed=!!v;state.textContent=v?"認識OK":"認識注意";quality.textContent=q.mark+" "+q.label;result.textContent=v?`認識：「${raw}」 → ナンバー ${v} ／ 認識時間 約${delay}ms`:`認識：「${raw}」 → ナンバー化できませんでした`;};
+  test.onresult=e=>{const resultSet=e.results[0],best=chooseBibAlternative(resultSet),alt=best||resultSet[0],raw=best?best.raw:alt.transcript,conf=Number(best?best.confidence:alt.confidence)||0,v=best?best.value:parseNumber(raw),q=recognitionQuality(conf),delay=started?Date.now()-started:0;micTestPassed=!!v;state.textContent=v?"認識OK":"認識注意";quality.textContent=q.mark+" "+q.label;result.textContent=v?`認識：「${raw}」 → ナンバー ${v} ／ 認識時間 約${delay}ms`:`認識：「${raw}」 → ナンバー化できませんでした`;};
   test.onerror=e=>{state.textContent="エラー";quality.textContent="⚠";result.textContent="音声認識エラー："+e.error;};
   test.onend=()=>{btn.disabled=false;renderStartFlow();};
   try{test.start();}catch(e){btn.disabled=false;state.textContent="開始失敗";result.textContent="音声テストを開始できませんでした。";}
