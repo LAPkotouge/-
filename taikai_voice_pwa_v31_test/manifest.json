@@ -1,1 +1,11 @@
-{"name":"大会ナンバー受付","short_name":"ナンバー受付","start_url":"./","display":"standalone","background_color":"#f4f6f8","theme_color":"#0b57d0","lang":"ja","icons":[]}
+{
+  "name": "LAP NUMBER TEST",
+  "short_name": "LAP TEST",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f6f8",
+  "theme_color": "#0b57d0",
+  "lang": "ja",
+  "description": "LAP NUMBER V31 テスト版 ゼッケンナンバー受付・管理システム"
+}
