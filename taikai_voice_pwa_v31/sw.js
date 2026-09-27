@@ -1,14 +1,14 @@
-const CACHE = "lap-number-v31-prod-pwa1";
+const CACHE = "lap-number-v31-prod-ui14";
 
 self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE)
       .then(cache => cache.addAll([
-        "./style.css?v=29r3",
-        "./app/app.js?v=31v13speech3",
-        "./app/restore.js?v=30r7",
-        "./app/reliable.js?v=31v13race1",
-        "./manifest.json?v=31pwa1"
+        "./style.css?v=31prod14",
+        "./app/app.js?v=31prod14",
+        "./app/restore.js?v=31prod14",
+        "./app/reliable.js?v=31prod14",
+        "./manifest.json?v=31prod14",
         "./icon-192.svg",
         "./icon-512.svg"
       ]))
@@ -35,6 +35,7 @@ self.addEventListener("fetch", event => {
     return;
   }
   event.respondWith(
-    caches.match(event.request).then(response => response || fetch(event.request))
+    fetch(event.request, {cache:"no-store"})
+      .catch(() => caches.match(event.request))
   );
 });
