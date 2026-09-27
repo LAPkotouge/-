@@ -6,7 +6,7 @@
 // =====================================================
 (function setupReliableRecordTransport(){
   let sending=false;
-  function payload(item){const masterId=(document.getElementById('sharedMasterId')?.value||localStorage.getItem('lap_number_active_master_id')||localStorage.getItem('lap_number_shared_master_id')||'').trim();const date=String(item.date||cfg.date||'');const year=date.slice(0,4)||String(new Date().getFullYear());return {...item,inputType:item.inputType||(item.recognized?'音声認識':'ボタン'),sheetId:item.sheetId||cfg.sheetId||'',masterId,year,event:String(item.event||cfg.event||''),date,mode:String(item.mode||cfg.mode||''),relayGap:String(cfg.relayGap||''),endpoint:String(cfg.endpoint||''),action:'RECORD_ADD'};}
+  function payload(item){const masterId=(document.getElementById('sharedMasterId')?.value||localStorage.getItem('lap_number_active_master_id')||localStorage.getItem('lap_number_shared_master_id')||localStorage.getItem('taikai_voice_shared_master_id_v1')||'').trim();const date=String(item.date||cfg.date||'');const year=date.slice(0,4)||String(new Date().getFullYear());return {...item,inputType:item.inputType||(item.recognized?'音声認識':'ボタン'),sheetId:item.sheetId||cfg.sheetId||'',masterId,year,event:String(item.event||cfg.event||''),date,mode:String(item.mode||cfg.mode||''),relayGap:String(cfg.relayGap||''),endpoint:String(cfg.endpoint||''),action:'RECORD_ADD'};}
   async function drain(){
     if(sending||!sendQueue.length||!cfg.endpoint||!navigator.onLine)return;
     sending=true;
@@ -14,7 +14,9 @@
       while(sendQueue.length&&navigator.onLine){
         const item=sendQueue[0];
         try{
-          await fetch(String(cfg.endpoint).trim(),{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload(item))});
+          const body=JSON.stringify(payload(item));
+          // 送信経路は1本、1記録につきPOSTは1回だけ。
+          await fetch(String(cfg.endpoint).trim(),{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=UTF-8'},body});
           sendQueue.shift(); save(); render();
         }catch(e){break;}
       }
@@ -23,6 +25,9 @@
       if(sendQueue.length&&navigator.onLine)setTimeout(drain,100);
     }
   }
+  // restore.js が先に定義した processQueue もここで一本化する。
+  // 2本の送信処理が同じsendQueueをshiftすると未送信レコードを飛ばす競合が起きるため。
+  processQueue=drain;
   window.v31ReliableSend=drain;
   window.v31ProcessQueue=drain;
   setInterval(()=>{if(sendQueue.length&&navigator.onLine)drain();},250);
