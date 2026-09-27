@@ -389,7 +389,7 @@ window.addEventListener("online",renderStartFlow);window.addEventListener("offli
   `;
   sharedBox.parentNode.insertBefore(box,sharedBox);
 
-  // V31 / GAS V7 iframe bridge: no dynamic JSONP.
+  // V31 / GAS V13: Android Chrome -> one-way POST. GAS completes CREATE_EVENT server-side.
   async function createEventViaPost(params){
     const endpoint=(document.getElementById("sEndpoint")?.value||cfg.endpoint||"").trim();
     if(!endpoint)throw new Error("Google Apps Script URLが未設定です");
@@ -444,7 +444,7 @@ window.addEventListener("online",renderStartFlow);window.addEventListener("offli
       localStorage.setItem(MASTER_ID_KEY,masterId);
       localStorage.setItem("lap_number_active_master_id",masterId);
       document.getElementById("sSheetId").value="";
-      status.textContent=`✅ ${filename} の作成要求をGASへ送信しました。V13ではGASが記録シート作成→共有大会マスタ登録をサーバー側で完結します。`;
+      status.textContent=`📤 ${filename} の作成要求をGASへ送信しました。※この表示は「送信完了」です。作成完了は共有大会マスタの新規行で確認します。`;
       document.getElementById("saveSettings")?.click();
     }catch(e){
       status.textContent=`❌ GASへの大会作成要求を送信できませんでした：${e.message||e}。共有大会マスタID・GAS URL・通信状態を確認してください。`;
