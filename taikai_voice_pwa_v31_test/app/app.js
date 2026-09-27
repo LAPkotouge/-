@@ -264,7 +264,7 @@ function runMicTest(){
   const state=$("v31MicState"),quality=$("v31Quality"),result=$("v31MicTestResult"),btn=$("v31MicTestBtn");
   if(!SR){state.textContent="非対応";quality.textContent="⚠";result.textContent="このブラウザでは音声認識を使用できません。";return;}
   if(listening){result.textContent="本番音声受付を停止してから端末テストしてください。";return;}
-  const test=new SR();test.lang="ja-JP";test.interimResults=false;test.continuous=false;
+  const test=new SR();test.lang="ja-JP";test.interimResults=false;test.continuous=false;test.maxAlternatives=5;
   let started=0;
   btn.disabled=true;state.textContent="待機中";quality.textContent="—";result.textContent="「1234」など、実際のゼッケン番号のように読み上げてください。";
   test.onspeechstart=()=>{started=Date.now();state.textContent="音声検知";};
@@ -333,11 +333,29 @@ function addPack(values,rawSpeech,captureTs,confidence=0){
   $("status").textContent=`集団受付：${unique.length}人（${unique.join("・")}）`;
   return true;
 }
-function startRecognition(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){alert("このブラウザは音声認識に対応していません。Chromeを使用してください。");return}recognition=new SR();recognition.lang="ja-JP";recognition.interimResults=false;recognition.continuous=false;recognition.onaudiostart=()=>{speechCandidateTs=Date.now();};
+function chooseBibAlternative(result){
+  const alts=[];
+  const limit=Math.min(result.length||0,5);
+  for(let i=0;i<limit;i++){
+    const a=result[i],raw=String(a.transcript||"").trim(),confidence=Number(a.confidence)||0;
+    const value=parseNumber(raw);
+    if(!value)continue;
+    let score=confidence;
+    if(value==="MURI"||value==="CANCEL")score+=2;
+    if(/^\\d{1,5}$/.test(raw.normalize("NFKC").replace(/\\s+/g,"")))score+=0.35;
+    if(/[0-9０-９]/.test(raw))score+=0.15;
+    alts.push({raw,value,confidence,score,index:i});
+  }
+  if(!alts.length)return null;
+  alts.sort((a,b)=>b.score-a.score||a.index-b.index);
+  return alts[0];
+}
+
+function startRecognition(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){alert("このブラウザは音声認識に対応していません。Chromeを使用してください。");return}recognition=new SR();recognition.lang="ja-JP";recognition.interimResults=false;recognition.continuous=false;recognition.maxAlternatives=5;recognition.onaudiostart=()=>{speechCandidateTs=Date.now();};
 recognition.onspeechstart=()=>{recognition._speechStartTs=Date.now();};
-recognition.onresult=e=>{const alt=e.results[0][0];const confidence=Number(alt.confidence)||0;const captureTs=recognition._speechStartTs||speechCandidateTs||Date.now();recognition._speechStartTs=0;speechCandidateTs=0;lastRecognitionConfidence=confidence;lastRecognitionDelayMs=Math.max(0,Date.now()-captureTs);const t=alt.transcript;showRecognitionRaw(t);
+recognition.onresult=e=>{const result=e.results[0];const best=chooseBibAlternative(result);const alt=best||result[0];const confidence=Number(best?best.confidence:alt.confidence)||0;const captureTs=recognition._speechStartTs||speechCandidateTs||Date.now();recognition._speechStartTs=0;speechCandidateTs=0;lastRecognitionConfidence=confidence;lastRecognitionDelayMs=Math.max(0,Date.now()-captureTs);const t=best?best.raw:alt.transcript;showRecognitionRaw(t);
 if(packMode){const pack=parsePackNumbers(t);if(pack.length>=2){addPack(pack,t,captureTs,confidence);return;}if(packExpectedCount>=2&&pack.length===1){add(pack[0],true,t,captureTs,confidence,"音声認識");warnPackCountMismatch(packExpectedCount,1,pack,captureTs);packExpectedCount=0;renderPackCountControls();return;}}
-const v=parseNumber(t);if(v==="CANCEL")cancelLast();else if(v==="MURI")add("ムリ",false,t,captureTs,confidence,"音声認識");else if(v)add(v,true,t,captureTs,confidence,"音声認識");else $("status").textContent=`認識できません：「${t}」`;};recognition.onerror=e=>{speechCandidateTs=0;if(e.error!=="aborted")$("status").textContent="音声認識エラー："+e.error;};recognition.onend=()=>{if(listening){clearTimeout(restartTimer);restartTimer=setTimeout(()=>{try{recognition.start()}catch{}},180)}};listening=true;render();try{recognition.start()}catch{}}
+const v=best?best.value:parseNumber(t);if(v==="CANCEL")cancelLast();else if(v==="MURI")add("ムリ",false,t,captureTs,confidence,"音声認識");else if(v)add(v,true,t,captureTs,confidence,"音声認識");else $("status").textContent=`認識できません：「${t}」`;};recognition.onerror=e=>{speechCandidateTs=0;if(e.error!=="aborted")$("status").textContent="音声認識エラー："+e.error;};recognition.onend=()=>{if(listening){clearTimeout(restartTimer);restartTimer=setTimeout(()=>{try{recognition.start()}catch{}},180)}};listening=true;render();try{recognition.start()}catch{}}
 function stopRecognition(){listening=false;clearTimeout(restartTimer);try{recognition&&recognition.abort()}catch{}render()}
 function fillSettings(){$("sEvent").value=cfg.event==="大会名未設定"?"":cfg.event;$("sDate").value=cfg.date;$("sMode").value=cfg.mode;$("sPoint").value=cfg.point==="地点未設定"?"":cfg.point;$("sStaff").value=cfg.staff;$("sTop").value=cfg.top;$("sRelayGap").value=cfg.relayGap;$("sEndpoint").value=cfg.endpoint;$("sSheetId").value=cfg.sheetId||"";const rw=$("relayGapWrap");if(rw)rw.hidden=cfg.mode!=="RELAY";const cs=$("connectionStatus");if(cs)cs.textContent=cfg.sheetName?`現在の保存先：${cfg.sheetName}`:"";}
 function saveSettings(){cfg.event=$("sEvent").value||"大会名未設定";cfg.date=$("sDate").value;cfg.mode=$("sMode").value;cfg.point=$("sPoint").value||"地点未設定";cfg.staff=$("sStaff").value;cfg.top=$("sTop").value;cfg.relayGap=Math.max(1,Math.min(60,Number($("sRelayGap").value)||1));cfg.endpoint=$("sEndpoint").value.trim();cfg.sheetId=$("sSheetId").value.trim();cfg.sheetName="";save();$("settingsPanel").hidden=true;render();processQueue();}
