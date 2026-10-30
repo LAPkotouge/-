@@ -424,6 +424,15 @@ function testDestination(){const status=$("connectionStatus"),endpoint=$("sEndpo
   }));
   $("v31KeypadClear")?.addEventListener("click",()=>{input.value="";input.dispatchEvent(new Event("input",{bubbles:true}));});
 })();
+function v31RestoreInputView(){
+  const panel=document.querySelector(".manual");
+  if(!panel)return;
+  const sticky=document.querySelector(".mainPanel .timeBar");
+  const clearance=(sticky?.getBoundingClientRect().height||64)+16;
+  const target=Math.max(0,window.scrollY+panel.getBoundingClientRect().top-clearance);
+  window.scrollTo({top:target,behavior:"smooth"});
+}
+$("v31ReturnViewBtn")?.addEventListener("click",()=>{document.activeElement?.blur?.();v31RestoreInputView();});
 $("v31ManualStartBtn")?.addEventListener("click",()=>{if(!(cfg.event&&cfg.point&&cfg.staff)){$("status").textContent="大会・地点・担当者を設定してください";return;}if(listening)stopRecognition();if(!fieldLock){fieldLock=true;save();renderFieldLock();}setRaceLiveMode(true);$("status").textContent="本番モード開始：手入力で受付できます";const panel=document.querySelector(".manual");if(panel)requestAnimationFrame(()=>{const sticky=document.querySelector(".mainPanel .timeBar");const clearance=(sticky?.getBoundingClientRect().height||64)+16;const target=Math.max(0,window.scrollY+panel.getBoundingClientRect().top-clearance);window.scrollTo({top:target,behavior:"smooth"});});});
 $("voiceBtn").addEventListener("click",()=>listening?stopRecognition():startRaceReception());
 $("packModeBtn")?.addEventListener("click",()=>{packMode=!packMode;if(!packMode)packExpectedCount=0;save();render();});
