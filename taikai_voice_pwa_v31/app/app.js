@@ -414,6 +414,7 @@ function testDestination(){const status=$("connectionStatus"),endpoint=$("sEndpo
     input.readOnly=active;
     if(active)input.blur();
   }
+  setActive(true); // Direct-entry-first: keypad visible on opening the app.
   toggle.addEventListener("click",()=>setActive(!active));
   pad.querySelectorAll("[data-v31-key]").forEach(button=>button.addEventListener("click",()=>{
     const key=button.getAttribute("data-v31-key");
@@ -423,7 +424,7 @@ function testDestination(){const status=$("connectionStatus"),endpoint=$("sEndpo
   }));
   $("v31KeypadClear")?.addEventListener("click",()=>{input.value="";input.dispatchEvent(new Event("input",{bubbles:true}));});
 })();
-$("v31ManualStartBtn")?.addEventListener("click",()=>{if(!(cfg.event&&cfg.point&&cfg.staff)){$("status").textContent="大会・地点・担当者を設定してください";return;}if(listening)stopRecognition();if(!fieldLock){fieldLock=true;save();renderFieldLock();}setRaceLiveMode(true);$("status").textContent="本番モード開始：手入力で受付できます";});
+$("v31ManualStartBtn")?.addEventListener("click",()=>{if(!(cfg.event&&cfg.point&&cfg.staff)){$("status").textContent="大会・地点・担当者を設定してください";return;}if(listening)stopRecognition();if(!fieldLock){fieldLock=true;save();renderFieldLock();}setRaceLiveMode(true);$("status").textContent="本番モード開始：手入力で受付できます";const panel=document.querySelector(".manual");if(panel)requestAnimationFrame(()=>panel.scrollIntoView({block:"start",behavior:"smooth"}));});
 $("voiceBtn").addEventListener("click",()=>listening?stopRecognition():startRaceReception());
 $("packModeBtn")?.addEventListener("click",()=>{packMode=!packMode;if(!packMode)packExpectedCount=0;save();render();});
 document.querySelectorAll("[data-pack-count]").forEach(b=>b.addEventListener("click",()=>setPackExpectedCount(Number(b.dataset.packCount))));
