@@ -120,7 +120,7 @@ function renderStartFlow(){
 let flashTimer=0;
 
 function flashPackAccepted(values,confidence=0){
-  if(!raceLiveMode||!values||values.length<2)return;
+  if(true)return; // Normal acceptance flash disabled; rely on latest-reception display.
   const box=$("v31Flash"),no=$("v31FlashNo"),meta=$("v31FlashMeta");if(!box||!no||!meta)return;
   clearTimeout(flashTimer);
   const low=Number(confidence)>0&&Number(confidence)<0.45;
@@ -132,7 +132,7 @@ function flashPackAccepted(values,confidence=0){
 }
 
 function flashAccepted(value,confidence=0,isMuri=false){
-  if(!raceLiveMode)return;
+  if(true)return; // Normal acceptance flash disabled.
   const box=$("v31Flash"),no=$("v31FlashNo"),meta=$("v31FlashMeta");if(!box||!no||!meta)return;
   clearTimeout(flashTimer);
   const low=Number(confidence)>0&&Number(confidence)<0.45;
@@ -169,11 +169,10 @@ function startRaceReception(){
   const eventOk=!!(cfg.event&&cfg.point&&cfg.staff);
   const speechOk=!!(window.SpeechRecognition||window.webkitSpeechRecognition);
   if(!eventOk){$("status").textContent="大会・地点・担当者を設定してください";return;}
-  if(!speechOk){$("status").textContent="この端末は音声認識に対応していません";return;}
-  if(!micTestPassed){$("status").textContent="先に端末音声テストを実施してください";return;}
   if(!fieldLock){fieldLock=true;save();renderFieldLock();}
   setRaceLiveMode(true);
-  if(!listening)startRecognition();
+  if(speechOk&&!listening)startRecognition();
+  else if(!speechOk)$("status").textContent="本番モード開始：音声非対応のため手入力で受付できます";
 }
 
 
@@ -410,6 +409,7 @@ function testDestination(){const status=$("connectionStatus"),endpoint=$("sEndpo
   }));
   $("v31KeypadClear")?.addEventListener("click",()=>{input.value="";input.dispatchEvent(new Event("input",{bubbles:true}));});
 })();
+$("v31ManualStartBtn")?.addEventListener("click",()=>{if(!(cfg.event&&cfg.point&&cfg.staff)){$("status").textContent="大会・地点・担当者を設定してください";return;}if(listening)stopRecognition();if(!fieldLock){fieldLock=true;save();renderFieldLock();}setRaceLiveMode(true);$("status").textContent="本番モード開始：手入力で受付できます";});
 $("voiceBtn").addEventListener("click",()=>listening?stopRecognition():startRaceReception());
 $("packModeBtn")?.addEventListener("click",()=>{packMode=!packMode;if(!packMode)packExpectedCount=0;save();render();});
 document.querySelectorAll("[data-pack-count]").forEach(b=>b.addEventListener("click",()=>setPackExpectedCount(Number(b.dataset.packCount))));
