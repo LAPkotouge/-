@@ -390,6 +390,26 @@ function saveSettings(){cfg.event=$("sEvent").value||"大会名未設定";cfg.da
 function clearRecords(){if(!confirm("この端末の登録データを全て消去します。No.も1から再開します。よろしいですか？"))return;records=[];sendQueue=[];seqCounter=0;lastSpeech="—";save();render();}
 function testDestination(){const status=$("connectionStatus"),endpoint=$("sEndpoint").value.trim();if(!endpoint){status.textContent="❌ Google Apps Script URLを入力してください";return}if(!navigator.onLine){status.textContent="❌ オフラインです";return}status.textContent="通信確認中…";const masterId=(document.getElementById("sharedMasterId")?.value||localStorage.getItem("taikai_voice_shared_master_id_v1")||"").trim();const date=$("sDate").value||"";const payload={action:"PING",sheetId:"",masterId,year:date.slice(0,4)||String(new Date().getFullYear()),event:$("sEvent").value||"接続確認",date,mode:$("sMode").value||"MARATHON",point:$("sPoint").value||"接続確認",staff:$("sStaff").value||"",time:now(),id:"PING_"+Date.now()};fetch(endpoint,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=UTF-8"},body:JSON.stringify(payload),cache:"no-store"}).then(()=>{status.textContent="✅ GASへ通信要求を送信できました。保存先IDの入力は不要です。";}).catch(()=>{status.textContent="❌ 通信確認できませんでした。GAS URL・通信状態を確認してください。";});}
 
+// Optional manual keypad. Default OFF; standard device keyboard remains available.
+(function initV31Keypad(){
+  const toggle=$("v31KeypadToggle"),pad=$("v31Keypad"),input=$("numberInput");
+  if(!toggle||!pad||!input)return;
+  let active=false;
+  function setActive(on){
+    active=!!on;pad.hidden=!active;toggle.setAttribute("aria-expanded",String(active));
+    toggle.textContent=active?"🔢 専用テンキーを閉じる（標準入力へ）":"🔢 専用テンキーを表示";
+    input.readOnly=active;
+    if(active)input.blur();
+  }
+  toggle.addEventListener("click",()=>setActive(!active));
+  pad.querySelectorAll("[data-v31-key]").forEach(button=>button.addEventListener("click",()=>{
+    const key=button.getAttribute("data-v31-key");
+    if(key==="back")input.value=input.value.slice(0,-1);
+    else if(input.value.length<12)input.value+=key;
+    input.dispatchEvent(new Event("input",{bubbles:true}));
+  }));
+  $("v31KeypadClear")?.addEventListener("click",()=>{input.value="";input.dispatchEvent(new Event("input",{bubbles:true}));});
+})();
 $("voiceBtn").addEventListener("click",()=>listening?stopRecognition():startRaceReception());
 $("packModeBtn")?.addEventListener("click",()=>{packMode=!packMode;if(!packMode)packExpectedCount=0;save();render();});
 document.querySelectorAll("[data-pack-count]").forEach(b=>b.addEventListener("click",()=>setPackExpectedCount(Number(b.dataset.packCount))));
