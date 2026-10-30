@@ -139,7 +139,7 @@ function flashAccepted(value,confidence=0,isMuri=false){
   box.className="v31Flash show"+(isMuri?" muri":low?" warn":"");
   no.textContent=isMuri?"ムリ":value;
   meta.textContent=isMuri?"1人カウント":low?`⚠ 認識注意　確信度 ${Math.round(Number(confidence)*100)}%`:"✓ 受付";
-  flashTimer=setTimeout(()=>{box.className="v31Flash";},650);
+  flashTimer=setTimeout(()=>{box.className="v31Flash";},300);
 }
 
 function latestUndoableRecord(){
