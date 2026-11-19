@@ -130,13 +130,24 @@ body.v31-race-live .v31VoicePackGrid .v31PackBtn{display:block!important}
     if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
     if(typeof v31RestoreInputView!=="function")throw Error("画面戻し処理を読み込めません");
     v31RestoreInputView();
-    // Compact Android only: move the page 20px further down so the controls appear 20px higher.
+    // Legacy compact Android: create scroll room before aligning the manual panel.
+    // Older devices may be at the maximum scroll offset, making pixel adjustments ineffective.
     if(!/iPad|iPhone|iPod/.test(navigator.userAgent)&&window.innerWidth<=420){
-      requestAnimationFrame(function(){requestAnimationFrame(function(){
-        var root=document.documentElement;
-        var maxScroll=Math.max(0,Math.max(root.scrollHeight,document.body.scrollHeight)-window.innerHeight);
-        window.scrollTo(0,Math.min(maxScroll,(window.pageYOffset||root.scrollTop||0)+20));
-      });});
+      var spacer=document.getElementById("v31ReturnScrollSpace");
+      if(!spacer){
+        spacer=document.createElement("div");
+        spacer.id="v31ReturnScrollSpace";
+        spacer.style.cssText="height:180px;min-height:180px;pointer-events:none;";
+        document.body.appendChild(spacer);
+      }
+      setTimeout(function(){
+        var panel=document.querySelector(".manual");
+        var sticky=document.querySelector(".mainPanel .timeBar");
+        if(!panel)return;
+        var desiredTop=(sticky?sticky.getBoundingClientRect().height:64)+16-32;
+        var move=panel.getBoundingClientRect().top-desiredTop;
+        window.scrollTo(0,Math.max(0,(window.pageYOffset||document.documentElement.scrollTop||0)+move));
+      },100);
     }
     if(status)status.textContent="画面位置を戻しました";
   });
