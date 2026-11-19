@@ -130,6 +130,14 @@ body.v31-race-live .v31VoicePackGrid .v31PackBtn{display:block!important}
     if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
     if(typeof v31RestoreInputView!=="function")throw Error("画面戻し処理を読み込めません");
     v31RestoreInputView();
+    // Compact Android only: move the page 8px further down so the controls appear 8px higher.
+    if(!/iPad|iPhone|iPod/.test(navigator.userAgent)&&window.innerWidth<=420){
+      requestAnimationFrame(function(){requestAnimationFrame(function(){
+        var root=document.documentElement;
+        var maxScroll=Math.max(0,Math.max(root.scrollHeight,document.body.scrollHeight)-window.innerHeight);
+        window.scrollTo(0,Math.min(maxScroll,(window.pageYOffset||root.scrollTop||0)+8));
+      });});
+    }
     if(status)status.textContent="画面位置を戻しました";
   });
 })();
