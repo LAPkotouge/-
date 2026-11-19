@@ -104,4 +104,33 @@ body.v31-race-live .v31VoicePackGrid .v31PackBtn{display:block!important}
   function updateCountdownColor(){const el=byId('countdown');if(!el)return;const text=(el.textContent||'').trim();el.classList.toggle('countdownBefore',text.startsWith('-'));}
   setInterval(updateCountdownColor,250);setTimeout(updateCountdownColor,50);setTimeout(importSharedProfile,150);
 })();
+</script>
+<script>
+/* Legacy Android: bind critical field controls independently and show immediate feedback. */
+(function(){
+  function bind(id,handler){
+    var el=document.getElementById(id);
+    if(!el)return;
+    el.addEventListener("click",function(ev){
+      ev.stopImmediatePropagation();
+      var status=document.getElementById("status");
+      try{handler(status);}catch(err){if(status)status.textContent="操作エラー："+(err&&err.message||err);}
+    },true);
+  }
+  bind("cancelLastBtn",function(status){
+    if(typeof cancelLast!=="function")throw Error("取消処理を読み込めません");
+    cancelLast();
+  });
+  bind("muriBtn",function(status){
+    if(typeof add!=="function")throw Error("ムリ登録処理を読み込めません");
+    add("ムリ",false,"ボタン",0,0,"ボタン");
+    if(status)status.textContent="ムリ（1人）を登録しました";
+  });
+  bind("v31ReturnViewBtn",function(status){
+    if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
+    if(typeof v31RestoreInputView!=="function")throw Error("画面戻し処理を読み込めません");
+    v31RestoreInputView();
+    if(status)status.textContent="画面位置を戻しました";
+  });
+})();
 </script></body></html>
