@@ -424,7 +424,7 @@ function testDestination(){const status=$("connectionStatus"),endpoint=$("sEndpo
   }));
   $("v31KeypadClear")?.addEventListener("click",()=>{input.value="";input.dispatchEvent(new Event("input",{bubbles:true}));});
 })();
-function v31RestoreInputView(){
+function v31RestoreInputView(compactReturn=false){
   const panel=document.querySelector(".manual");
   if(!panel)return;
   const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
@@ -433,14 +433,15 @@ function v31RestoreInputView(){
     const sticky=document.querySelector(".mainPanel .timeBar");
     const vv=window.visualViewport;
     const viewportTop=isIOS&&vv?vv.offsetTop:0;
-    const clearance=(sticky?.getBoundingClientRect().height||64)+16+viewportTop;
+    const oldAndroidCompact=compactReturn&&!isIOS&&window.innerWidth<=420;
+    const clearance=(sticky?.getBoundingClientRect().height||64)+16+viewportTop-(oldAndroidCompact?10:0);
     const delta=panel.getBoundingClientRect().top-clearance;
     if(Math.abs(delta)>2)window.scrollTo({top:Math.max(0,window.scrollY+delta),behavior:"instant"});
   };
   requestAnimationFrame(()=>requestAnimationFrame(align));
   if(isIOS){setTimeout(align,120);setTimeout(align,380);}
 }
-$("v31ReturnViewBtn")?.addEventListener("click",()=>{document.activeElement?.blur?.();v31RestoreInputView();});
+$("v31ReturnViewBtn")?.addEventListener("click",()=>{document.activeElement?.blur?.();v31RestoreInputView(true);});
 $("v31ManualStartBtn")?.addEventListener("click",()=>{if(!(cfg.event&&cfg.point&&cfg.staff)){$("status").textContent="大会・地点・担当者を設定してください";return;}if(listening)stopRecognition();if(!fieldLock){fieldLock=true;save();renderFieldLock();}setRaceLiveMode(true);$("status").textContent="本番モード開始：手入力で受付できます";v31RestoreInputView();});
 $("voiceBtn").addEventListener("click",()=>listening?stopRecognition():startRaceReception());
 $("packModeBtn")?.addEventListener("click",()=>{packMode=!packMode;if(!packMode)packExpectedCount=0;save();render();});
