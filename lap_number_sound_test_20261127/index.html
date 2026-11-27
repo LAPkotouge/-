@@ -115,7 +115,7 @@ function v31PlaySound(kind){
  const ac=v31AudioContext||(v31AudioContext=new AC());
  const play=()=>{if(cfg.keySound===false||listening||ac.state!=="running")return;
  const tones={digit:[1050],back:[550],register:[1050,1450],muri:[740],cancel:[350]}[kind]||[];
- tones.forEach((hz,i)=>{const start=ac.currentTime+i*0.075,o=ac.createOscillator(),g=ac.createGain();o.type="sine";o.frequency.value=hz;g.gain.setValueAtTime(0,start);g.gain.linearRampToValueAtTime(0.13,start+0.004);g.gain.exponentialRampToValueAtTime(0.001,start+0.045);o.connect(g);g.connect(ac.destination);o.start(start);o.stop(start+0.05);});};
+ tones.forEach((hz,i)=>{const duration=kind==="muri"?0.18:0.05;const start=ac.currentTime+i*0.075,o=ac.createOscillator(),g=ac.createGain();o.type="sine";o.frequency.value=hz;g.gain.setValueAtTime(0,start);g.gain.linearRampToValueAtTime(0.25,start+0.004);g.gain.exponentialRampToValueAtTime(0.001,start+duration-0.005);o.connect(g);g.connect(ac.destination);o.start(start);o.stop(start+duration);});};
  if(ac.state==="running")play();else ac.resume().then(play).catch(()=>{});
  }catch{}
 }
