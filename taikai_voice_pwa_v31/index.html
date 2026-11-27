@@ -123,7 +123,8 @@ body.v31-race-live .v31VoicePackGrid .v31PackBtn{display:block!important}
   });
   bind("muriBtn",function(status){
     if(typeof add!=="function")throw Error("ムリ登録処理を読み込めません");
-    add("ムリ",false,"ボタン",0,0,"ボタン");
+    if(listening)stopRecognition();
+    add("ムリ",false,"ボタン",0,0,"ボタン");v31PlaySound("muri");
     if(status)status.textContent="ムリ（1人）を登録しました";
   });
   bind("v31ReturnViewBtn",function(status){
