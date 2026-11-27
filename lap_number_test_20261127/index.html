@@ -1,0 +1,748 @@
+<!doctype html>
+<html lang="ja"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b57d0"><style>*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;background:#f4f6f8;color:#17202a}button,input,select{font:inherit}.wrap{max-width:600px;margin:auto;padding:8px 12px 20px}.appHeader{background:#fff;color:#17202a;padding:6px 2px 8px;margin-bottom:7px}.titleRow{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.eventTitle{font-size:26px;font-weight:900;color:#0b2f6b;line-height:1.15;min-width:0}.eventDate{font-size:14px;font-weight:800;white-space:nowrap;padding-top:0;display:flex;flex-direction:column;align-items:flex-end;line-height:1.15}.eventDate::before{content:"V＝２９";font-size:inherit;font-weight:800;margin-bottom:5px;color:#667085}.infoBox{margin-top:8px;padding:9px 11px;border:1px solid #9bd3b0;border-radius:10px;background:#f3fbf6}.infoRow{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:14px;font-weight:700}.dotSep{color:#555}.connected{color:#138a35;font-weight:900}.offline{color:#b3261e;font-weight:900}.status{font-weight:800}.voiceActiveStatus{color:#d71920!important;font-weight:900}.destination{width:calc(100% + 16px);margin-left:-8px;margin-right:-8px;font-size:14px;font-weight:600;overflow-wrap:anywhere;word-break:break-all;margin-top:6px;line-height:1.25}.panel,.history,.settings{background:#fff;border-radius:12px;padding:10px;margin-bottom:8px;box-shadow:0 1px 4px #0001}.mainPanel{padding-top:8px}.timeBar{display:grid;grid-template-columns:1fr 1fr;align-items:stretch;border:1px solid #a8d8ba;border-radius:10px;background:#f8fcfa;padding:6px 8px;margin-bottom:8px;min-height:56px}.timeItem{display:flex;align-items:center;justify-content:center;gap:8px;min-width:0;white-space:nowrap}.timeItemTop{border-left:1px solid #cfd6d2}.timeItem span{font-size:14px;font-weight:800}.timeItem .topTimeLabel{display:inline-block;text-align:center;line-height:1.05;white-space:normal}.timeItem b{font-size:24px;letter-spacing:.5px}.countdownBefore{color:#d71920!important}.timeDivider{display:none}.voice{width:100%;height:52px;border:0;border-radius:10px;background:#0b57d0;color:#fff;font-size:18px;font-weight:800}.voice.on{background:#188038}.voiceHint{margin:4px 0 7px}.hint,.small{font-size:12px;color:#667085;margin:5px 0}.manual{margin-top:6px}.manual label{display:block;font-size:16px;font-weight:800;margin-bottom:5px}.inputModeRow{display:grid;grid-template-columns:minmax(0,1fr) 78px;gap:8px}.manual input{width:100%;height:52px;border:2px solid #c7cdd4;border-radius:9px;padding:7px 10px;font-size:28px;font-weight:400;text-align:center}.manModeBtn{height:52px;border:1.5px solid #e56b2f;border-radius:9px;background:#fff;color:#c64b14;font-weight:900;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.05;font-size:16px}.manModeHint{margin-left:2px}.registerMuriRow{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:7px}.register,.muri{width:100%;height:52px;margin:0;border:0;border-radius:9px;color:#fff;font-weight:900;font-size:18px}.register{background:#0b57d0}.muri{background:#d71920}.deleteBlock{margin-top:8px;padding-top:8px;border-top:1px solid #ddd}.deleteRow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:7px;width:100%}.deleteRow input{min-width:0;width:100%;height:42px;padding:6px 9px;border:1px solid #bbb;border-radius:8px}.deleteRow button{height:42px;padding:8px 13px;border:1px solid #c62828;border-radius:8px;background:#fff;color:#c62828;font-weight:800;white-space:nowrap}.deleteLabel{font-size:13px;font-weight:800;white-space:nowrap}.latestCompact{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.latestCell{min-height:52px;border:1px solid #9dbcf7;border-radius:9px;background:#f8fbff;padding:8px 10px;font-weight:800;display:flex;align-items:center;gap:7px;overflow:hidden;white-space:nowrap}.latestMain{font-size:19px}.latestMain b{color:#0b57d0;font-size:28px;line-height:1}.latestSub{font-size:11px}.rawSpeech{font-size:14px}.rawSpeech .rawLabel{font-size:12px;flex:0 0 auto;display:flex;flex-direction:column;line-height:1.05;text-align:center;min-width:34px}.rawSpeech b{color:#0b57d0;font-size:28px;line-height:1;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}.cancelLast{width:100%;margin-top:7px;padding:9px;border:1px solid #b3261e;border-radius:8px;background:#fff;color:#b3261e;font-weight:700}.history{padding:0;overflow:hidden}.historyTitle{padding:9px 11px;font-size:16px;font-weight:900;border-bottom:1px solid #ddd}.historyTitle span{font-size:13px}.historyHeader,.history .row{display:grid;grid-template-columns:55px 1fr 92px;align-items:center;text-align:center}.historyHeader{font-weight:800;padding:7px 5px;border-bottom:1px solid #ddd}.history .row{padding:6px 5px;border-bottom:1px solid #e6e6e6;font-size:17px;font-weight:700;min-height:40px}.history .row:last-child{border-bottom:0}.numberCell{position:relative;display:flex;align-items:center;justify-content:center;min-width:0}.historyNumber{display:inline-block;text-align:center;font-size:22px;line-height:1.1}.historyTag{position:absolute;left:calc(50% + 42px);font-size:12px;font-weight:900;white-space:nowrap}.duplicateTag,.invalidTag{color:#d32f2f}.relayTag{color:#0b57d0}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:8px}.stats div{background:#fff;border-radius:10px;text-align:center;padding:7px}.stats b{display:block;font-size:22px}.stats span{font-size:12px;color:#667085}.settings button{width:100%;height:44px;margin-top:5px;border:0;border-radius:8px;background:#e8eaed}.modal{position:fixed;inset:0;z-index:99999;background:#0007;display:flex;align-items:center;justify-content:center;padding:14px}.modal[hidden]{display:none!important}.dialog{background:#fff;border-radius:14px;padding:18px;width:min(560px,100%);max-height:90vh;overflow:auto}.dialog h2{margin-top:0;display:flex;align-items:center;width:100%}.dialog h2::after{content:"V＝２９";font-size:14px;font-weight:800;color:#667085;white-space:nowrap;margin-left:auto}.dialog label{display:block;font-weight:700;margin:10px 0}.dialog input,.dialog select{width:100%;height:46px;margin-top:5px;padding:5px 8px;border:1px solid #bbb;border-radius:8px}.dialogBtns{display:flex;gap:8px}.dialogBtns button{flex:1;height:48px;border:0;border-radius:8px;background:#0b57d0;color:#fff;font-weight:700}.dialogBtns button+button{background:#777}.testBtn{width:100%;margin-top:8px;padding:11px;border:1px solid #0b57d0;border-radius:10px;background:#fff;color:#0b57d0;font-weight:700}.clearActions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}.clearBtn{width:100%;padding:12px;border-radius:10px;font-weight:800}.appClearBtn{border:1px solid #6b7280;background:#fff;color:#374151}.sheetClearBtn{border:1px solid #c62828;background:#fff;color:#c62828}.sheetClearBtn:disabled{opacity:.55}.clearActions+.small{margin-top:6px}.eventProfileBox{border:1px solid #aac7f5;background:#f8fbff;border-radius:11px;padding:11px;margin:4px 0 14px}.profileTitle{font-size:17px;font-weight:900;color:#0b2f6b;margin-bottom:5px}.profileYearRow{display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:end}.profileYearRow label{margin:5px 0}.profileHint{font-size:11px;color:#667085;line-height:1.35;padding-bottom:8px}.profileBtns{display:grid;grid-template-columns:1.25fr .8fr .65fr;gap:6px}.profileBtns button,.profileShareBtns button,.profileCopyRow button{min-height:42px;border:1px solid #0b57d0;border-radius:8px;background:#fff;color:#0b57d0;font-weight:800;padding:7px}.profileBtns button:first-child{background:#0b57d0;color:#fff}.profileBtns button:last-child{border-color:#b3261e;color:#b3261e}.profileCopyRow{display:grid;grid-template-columns:120px 1fr;gap:8px;align-items:end;margin-top:10px;padding-top:10px;border-top:1px solid #d7e3f7}.profileCopyRow label{margin:0}.profileShareBtns{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}.qrShareBox{margin-top:9px;padding:10px;background:#fff;border:1px solid #d7e3f7;border-radius:9px;text-align:center}.qrShareBox[hidden]{display:none!important}#qrCode{display:flex;justify-content:center;margin-bottom:7px}#qrCode img,#qrCode canvas{max-width:220px;width:100%;height:auto!important}
+@media(max-width:430px){.wrap{padding:6px 8px 16px}.eventTitle{font-size:23px}.eventDate{font-size:12px}.infoRow,.destination{font-size:12px}.destination{width:calc(100% + 18px);margin-left:-9px;margin-right:-9px}.timeBar{min-height:50px;padding:4px 5px}.timeItem{gap:6px}.timeItem span{font-size:12px}.timeItem b{font-size:22px}.voice{height:48px}.manual input{font-size:25px;font-weight:400}.deleteRow{grid-template-columns:minmax(0,1fr) auto auto;gap:5px}.deleteRow button{padding:7px 10px}.deleteLabel{font-size:11px}.latestCell{padding:7px 8px}.latestMain{font-size:17px}.latestMain b{font-size:25px}.rawSpeech .rawLabel{font-size:10px;min-width:30px}.rawSpeech b{font-size:25px}.history .row{font-size:16px;min-height:38px}.historyNumber{font-size:21px}.historyTag{left:calc(50% + 38px);font-size:11px}.clearActions{gap:6px}.clearBtn{font-size:14px;padding:11px 6px}.profileYearRow{grid-template-columns:90px 1fr}.profileBtns{grid-template-columns:1.15fr .75fr .6fr}.profileBtns button,.profileShareBtns button,.profileCopyRow button{font-size:12px;padding:6px 4px}.profileCopyRow{grid-template-columns:105px 1fr}.dialog h2::after{font-size:12px}}
+/* V31 gold direct-input frame */
+.manual{border-color:#f1c40f!important;background:#fffaf0!important}.manual label{color:#9a6a00!important}.manual #numberInput{border:4px solid #f1c40f!important;box-shadow:none!important}.manual #numberInput:focus{border-color:#f1c40f!important;outline:2px solid rgba(241,196,15,.25)!important;outline-offset:1px;box-shadow:none!important}
+
+/* V31 compact green group-mode button + maximum manual number size */
+.v31VoicePackGrid{grid-template-columns:minmax(0,1fr) 78px!important;gap:8px!important}
+.v31VoicePackGrid .v31PackBtn{width:78px!important;height:52px!important;min-height:52px!important;padding:4px!important;border:1.5px solid #188038!important;border-radius:9px!important;background:#fff!important;color:#188038!important;font-size:16px!important;line-height:1.05!important;font-weight:900!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important}
+.v31VoicePackGrid .v31PackBtn.on{background:#188038!important;color:#fff!important;border-color:#188038!important}
+.manual #numberInput{font-size:clamp(38px,11vw,44px)!important;line-height:44px!important;height:52px!important;min-height:52px!important;padding:0 4px!important;box-sizing:border-box!important}
+.manual #numberInput::placeholder{font-size:24px!important;line-height:44px!important;font-weight:800!important;color:#9b9b9b!important;opacity:1!important}
+
+/* V31 same-row cancel + number delete */
+.deleteActionRow{display:grid;grid-template-columns:minmax(105px,1.05fr) minmax(0,1fr) 56px;align-items:center;gap:5px;width:100%}
+.deleteActionRow .cancelLast{width:100%;height:42px;margin:0!important;padding:5px 4px!important;border:1px solid #b3261e;border-radius:8px;background:#fff;color:#b3261e;font-size:13px;font-weight:900;white-space:nowrap}
+.deleteActionRow input{min-width:0;width:100%;height:42px;padding:5px 7px;border:1px solid #bbb;border-radius:8px;font-size:16px}
+.deleteActionRow #deleteNumberBtn{width:56px;height:42px;padding:5px 4px;border:1px solid #c62828;border-radius:8px;background:#fff;color:#c62828;font-size:14px;font-weight:900;white-space:nowrap}
+.deleteHint{font-size:10px!important;line-height:1.25!important;margin:4px 0 0!important}
+
+/* V31 guaranteed vertical centering for the direct-input example text */
+.numberInputWrap{position:relative;min-width:0;height:52px}
+.numberInputWrap #numberInput{width:100%!important;height:52px!important;min-height:52px!important;padding:0 4px!important;line-height:1!important;text-align:center!important;box-sizing:border-box!important}
+.numberInputPlaceholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;font-size:24px;font-weight:700;color:#a8a8a8;line-height:1;white-space:nowrap}
+.numberInputWrap #numberInput:not(:placeholder-shown)+.numberInputPlaceholder{display:none}
+.numberInputWrap #numberInput::placeholder{color:transparent!important;opacity:0!important}
+</style><title>LAP NUMBER V31 TEST</title><style>body::before{content:'TEST専用・本番送信なし';display:block;background:#a21caf;color:white;text-align:center;font-weight:bold;padding:5px}</style><style>
+.v31PackRow{display:flex;gap:8px;align-items:center;margin-top:8px}.v31PackBtn{min-height:42px;border:2px solid #8a5a00;border-radius:9px;background:#fff;color:#8a5a00;font-weight:900;padding:7px 12px}.v31PackBtn.on{background:#8a5a00;color:#fff}.v31PackRow .hint{margin:0;font-weight:700}.v31PackCountRow{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-top:6px}.v31PackCountRow[hidden]{display:none}.v31PackCountRow span,.v31PackCountRow b{font-size:12px}.v31PackCountRow button{min-width:40px;min-height:36px;border:1px solid #8a5a00;border-radius:8px;background:#fff;font-weight:900}.v31PackCountRow button.on{background:#8a5a00;color:#fff}.v31Diag{margin-top:9px;padding:9px;border:1px solid #ccd5e0;border-radius:9px;background:#f8fafc}.v31Diag>div:first-child{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.v31Diag span{font-size:12px;font-weight:800}.v31Diag button{margin-top:7px;min-height:40px;width:100%;font-weight:900;border-radius:8px;border:1px solid #667085;background:#fff}.v31Diag .hint{margin-top:5px}.v31FieldAlert{margin-top:7px;padding:8px 10px;border-radius:9px;display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:13px}.v31FieldAlert b{font-size:15px}.v31FieldAlert.ok{background:#eaf7ee;color:#176b36}.v31FieldAlert.warn{background:#fff4d6;color:#7a4b00}.v31FieldAlert.danger{background:#ffe5e5;color:#a40000}.v31FieldAlert.offline{background:#eceff3;color:#344054}.v31LiveCounters{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:6px}.v31LiveCounters div{text-align:center;padding:6px 2px;border:1px solid #d0d5dd;border-radius:8px;background:#fff}.v31LiveCounters b{display:block;font-size:24px;line-height:1}.v31LiveCounters span{font-size:10px;font-weight:800}.v31LiveCounters .queueWarn{background:#fff1d6;color:#7a4b00}.v31FieldLockBtn{margin-top:6px;width:100%;min-height:40px;border-radius:9px;border:1px solid #667085;background:#fff;font-weight:900}.v31FieldLockBtn.on{background:#263238;color:#fff;border-color:#263238}.v31StartFlow{margin-top:8px;padding:9px;border:1px solid #cfd8dc;border-radius:9px;background:#fff}.v31StartSteps{display:flex;gap:5px;flex-wrap:wrap;margin:6px 0}.v31StartSteps span{padding:4px 7px;border-radius:12px;background:#eceff1;font-size:11px;font-weight:800}.v31StartSteps span.ok{background:#e7f6ec;color:#176b36}.v31StartSteps span.ng{background:#fff1d6;color:#7a4b00}.v31StartBtn{width:100%;min-height:44px;border:0;border-radius:9px;background:#176b36;color:#fff;font-size:15px;font-weight:900}.v31StartBtn:disabled{background:#9aa4ad}.v31QuickUndoBtn{width:100%;min-height:54px;margin-top:7px;border:2px solid #b42318;border-radius:9px;background:#fff;color:#b42318;font-size:17px;font-weight:900}.v31UndoInfo{text-align:center;font-size:12px;font-weight:800;margin-top:3px}.v31GapFill{margin-top:7px;padding:8px;border:2px solid #b54708;border-radius:9px;background:#fff4e5}.v31GapFill b{display:block;text-align:center;margin-bottom:6px}.v31GapFill button{width:100%;min-height:46px;margin-top:4px;border-radius:8px;font-weight:900}.v31GapFillBtn{}.v31GapFill button:first-of-type{background:#b54708;color:#fff;border:0}.v31GapFill button:last-of-type{background:#fff;border:1px solid #667085}.v31ExitRaceBtn{width:100%;min-height:38px;margin-top:6px;border:1px solid #667085;border-radius:9px;background:#fff;font-weight:800}body.v31-race-live .v31StartFlow{padding:6px;background:#eef8f1}body.v31-race-live .v31Diag,body.v31-race-live .v31PackRow,body.v31-race-live #v31FieldLockBtn{display:none!important}body.v31-race-live details,body.v31-race-live .settings,body.v31-race-live .setup{display:none!important}body.v31-race-live #v31ExitRaceBtn{display:block!important}body.v31-race-live #v31QuickUndoBtn,body.v31-race-live #v31UndoInfo{display:none!important}body.v31-race-live #v31GapFill:not([hidden]){display:block!important}body.v31-race-live #v31StartSteps{display:none}body.v31-race-live .v31StartFlowTitle{display:none}body.v31-race-live .voice{min-height:64px;font-size:20px}body.v31-race-live #muriBtn{min-height:60px;font-size:18px}body.v31-race-live .history{font-size:17px}.v31LockedControl{opacity:.42!important;pointer-events:none!important;filter:grayscale(.5)}.v31LockNote{font-size:12px;font-weight:800;margin-top:4px}
+.v31Flash{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;flex-direction:column;background:rgba(255,255,255,.94);pointer-events:none}.v31Flash.show{display:flex}.v31FlashNo{font-size:min(34vw,180px);line-height:.95;font-weight:900;letter-spacing:-.04em}.v31FlashMeta{margin-top:14px;font-size:20px;font-weight:900}.v31Flash.warn{background:rgba(255,241,214,.97)}.v31Flash.warn .v31FlashMeta{color:#8a4b00}.v31Flash.muri{background:rgba(255,229,229,.97)}.v31Flash.muri .v31FlashNo{color:#a40000}.v31FlashNo,.v31FlashMeta{flex-shrink:0}.v31FlashNo{min-height:1em;display:flex;align-items:center;justify-content:center;text-align:center}.v31Flash.muri .v31FlashNo{letter-spacing:-.04em}.v31Flash{position:fixed!important;top:0!important;left:0!important;width:100vw!important;height:100vh!important;height:100dvh!important;right:auto!important;bottom:auto!important;transform:none!important;box-sizing:border-box;align-items:center!important;justify-content:center!important}
+/* V31 UI compact layout */
+.v31VoicePackGrid{display:grid;grid-template-columns:minmax(0,1fr) 78px;gap:8px;align-items:stretch;margin-top:8px}
+.v31VoicePackGrid .voice{width:100%;margin:0;min-width:0}
+.v31VoicePackGrid .v31PackBtn{width:78px;height:52px;min-height:52px;margin:0;padding:4px;border:1.5px solid #188038;border-radius:9px;background:#fff;color:#188038;font-size:16px;line-height:1.05;font-weight:900;display:flex;flex-direction:column;align-items:center;justify-content:center}.v31VoicePackGrid .v31PackBtn.on{background:#188038;color:#fff;border-color:#188038}
+.v31PackRow{display:contents}.v31PackRow .hint{display:none}
+.v31Diag{padding:5px 7px;margin-top:6px;display:flex;align-items:center;gap:8px}.v31Diag>div:first-child{font-size:11px;display:flex;align-items:center;gap:6px;flex-wrap:nowrap;white-space:nowrap}.v31Diag button{margin-top:0;min-height:30px;width:auto;padding:3px 10px;font-size:12px;flex:0 0 auto;white-space:nowrap}.v31Diag .hint{display:none}
+.manual{margin-top:8px!important;padding:9px!important;border:3px solid #f1c40f!important;border-radius:10px!important;background:#fffaf0!important}.manual>label{display:block;font-size:18px!important;font-weight:900!important;color:#9a6a00!important;margin-bottom:5px}.manual #numberInput{border:4px solid #f1c40f!important;background:#fff!important;font-size:clamp(38px,11vw,44px)!important;line-height:44px!important;font-weight:900!important;height:52px!important;min-height:52px!important;padding:0 4px!important;box-sizing:border-box!important;box-shadow:none!important}.manual #numberInput::placeholder{font-size:24px!important;line-height:44px!important;font-weight:800!important;color:#9b9b9b!important;opacity:1!important}.manual #numberInput:focus{border-color:#f1c40f!important;outline:2px solid rgba(241,196,15,.25)!important;outline-offset:1px;box-shadow:none!important}.manual #registerBtn{min-height:54px!important;font-size:20px!important;font-weight:900!important;box-shadow:0 2px 5px rgba(0,0,0,.18)}
+body.v31-race-live .v31VoicePackGrid .v31PackRow{display:contents!important}
+body.v31-race-live .v31VoicePackGrid .v31PackBtn{display:block!important}
+
+/* V31 ultra-compact pre-race controls */
+.v31StartFlow{margin-top:4px!important;padding:4px 5px!important;border-radius:8px!important}
+.v31StartFlowTitle{display:flex;align-items:center;justify-content:space-between;gap:5px;margin:0 0 2px!important}
+.v31StartFlowTitle>b{font-size:13px!important;line-height:1!important;white-space:nowrap}
+.v31StartFlowTitle .v31FieldLockBtn{width:auto!important;min-height:27px!important;height:27px!important;margin:0!important;padding:2px 7px!important;border-radius:7px!important;font-size:11px!important;line-height:1!important;white-space:nowrap;flex:0 0 auto}
+.v31StartSteps{display:flex!important;gap:2px!important;margin:2px 0!important;flex-wrap:wrap!important}
+.v31StartSteps span{padding:2px 5px!important;border-radius:9px!important;font-size:9px!important;line-height:1!important;white-space:nowrap}
+.v31StartFlow .v31Diag{margin-top:2px!important;padding:3px 5px!important;gap:5px!important;min-height:29px!important;border-radius:7px!important}
+.v31StartFlow .v31Diag>div:first-child{gap:3px!important;font-size:9px!important;flex:1 1 auto;min-width:0;white-space:nowrap}
+.v31StartFlow .v31Diag b,.v31StartFlow .v31Diag span{font-size:9px!important;line-height:1!important}
+.v31StartFlow .v31Diag button{min-height:25px!important;height:25px!important;padding:1px 7px!important;font-size:10px!important;line-height:1!important;border-radius:6px!important}
+.v31StartFlow #v31MicTestResult{display:none!important}
+
+/* V31 same-row cancel + number delete */
+.deleteActionRow{display:grid;grid-template-columns:minmax(105px,1.05fr) minmax(0,1fr) 56px;align-items:center;gap:5px;width:100%}
+.deleteActionRow .cancelLast{width:100%;height:42px;margin:0!important;padding:5px 4px!important;border:1px solid #b3261e;border-radius:8px;background:#fff;color:#b3261e;font-size:13px;font-weight:900;white-space:nowrap}
+.deleteActionRow input{min-width:0;width:100%;height:42px;padding:5px 7px;border:1px solid #bbb;border-radius:8px;font-size:16px}
+.deleteActionRow #deleteNumberBtn{width:56px;height:42px;padding:5px 4px;border:1px solid #c62828;border-radius:8px;background:#fff;color:#c62828;font-size:14px;font-weight:900;white-space:nowrap}
+.deleteHint{font-size:10px!important;line-height:1.25!important;margin:4px 0 0!important}
+
+/* V31 guaranteed vertical centering for the direct-input example text */
+.numberInputWrap{position:relative;min-width:0;height:52px}
+.numberInputWrap #numberInput{width:100%!important;height:52px!important;min-height:52px!important;padding:0 4px!important;line-height:1!important;text-align:center!important;box-sizing:border-box!important}
+.numberInputPlaceholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;font-size:24px;font-weight:700;color:#a8a8a8;line-height:1;white-space:nowrap}
+.numberInputWrap #numberInput:not(:placeholder-shown)+.numberInputPlaceholder{display:none}
+.numberInputWrap #numberInput::placeholder{color:transparent!important;opacity:0!important}
+.v31KeypadToggle{width:78px;min-width:78px;min-height:52px;margin:0;padding:2px;border:2px solid #1670b8;border-radius:9px;background:#eef7ff;color:#124f7b;font-weight:900;font-size:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.05}.v31KeypadToggle span{display:block}.v31Keypad[hidden]{display:none!important}.v31Keypad{margin:7px 0}.v31KeypadGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.v31KeypadGrid button{height:clamp(78px,19vw,108px);min-height:78px;border:2px solid #343434;border-radius:9px;background:#090909;color:#ff9500;font-size:clamp(52px,14vw,78px);font-weight:900;line-height:1;touch-action:manipulation}.v31KeypadGrid button:active{background:#353535}.v31KeypadGrid .v31KeypadBack{color:#ff9500}.v31KeypadGrid .v31KeypadRegister{background:#086bd9!important;color:#fff!important;border-color:#0656b1!important;font-size:clamp(22px,6vw,30px)!important}.v31KeypadHyphen{width:100%;min-height:38px;margin-top:5px;background:#171717;color:#ffe500;border:1px solid #555;border-radius:8px;font-size:20px;font-weight:900}.v31KeypadClear{min-height:54px!important;background:#fff4f4!important;color:#a02b2b!important;border:2px solid #a94442!important;font-size:18px!important;font-weight:900}.v31StandardRegister{width:100%;min-height:52px;margin-top:6px}.manual:has(.v31Keypad:not([hidden])) .v31StandardRegister{display:none!important}.manual:has(.v31Keypad:not([hidden])) .registerMuriRow{display:grid!important;grid-template-columns:1fr 1fr;gap:7px}.manual:has(.v31Keypad:not([hidden])) .registerMuriRow>*{width:100%!important}.v31KeypadCancel{min-height:54px!important;font-size:16px!important;font-weight:900!important}.manual .registerMuriRow{display:grid!important;grid-template-columns:1fr 1fr;gap:7px}.manual .registerMuriRow>*{width:100%!important}.v31ManualStartBtn{width:100%;min-height:43px;margin:5px 0;border:2px solid #176b36;border-radius:9px;background:#eaf7ee;color:#176b36;font-size:15px;font-weight:900}body.v31-race-live #v31ManualStartBtn{display:none!important}.deleteBlock .deleteActionRow{display:grid!important;grid-template-columns:minmax(0,1.4fr) minmax(52px,.48fr) minmax(92px,1fr)!important;align-items:center!important;gap:6px!important}.deleteBlock .deleteHint{font-size:clamp(10px,2.5vw,12px)!important;line-height:1.2!important;margin:0!important;color:#526175!important;white-space:nowrap!important}.deleteBlock #deleteNumberInput{min-width:0!important}.deleteBlock #deleteNumberBtn{min-width:0!important;width:100%!important}.v31KeypadGrid button{user-select:none;-webkit-user-select:none}body.v31-race-live .mainPanel .timeBar{position:sticky;top:0;z-index:20;background:#fff;border-radius:8px;box-shadow:0 2px 7px rgba(0,0,0,.12)}.manual .inputModeRow{display:grid!important;grid-template-columns:48px minmax(0,1fr) 78px!important;align-items:center!important;gap:5px!important}.manual .v31InlineInputLabel{display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important;margin:0!important;padding:0!important;color:#9a6a00!important;font-size:16px!important;font-weight:900!important;line-height:1.1!important;white-space:normal!important}.manual .numberInputWrap{width:100%!important;min-width:0!important}.manual .numberInputPlaceholder{font-size:clamp(21px,6.5vw,30px)!important;font-weight:900!important;letter-spacing:-.055em!important;transform:scaleX(.78);transform-origin:center center;white-space:nowrap!important;overflow:visible!important}.manual .v31KeypadToggle{width:78px!important;min-width:0!important}.mainPanel .latestCompact{margin-top:5px!important;gap:7px!important}.mainPanel .latestCell{height:42px!important;min-height:42px!important;max-height:42px!important;padding:3px 8px!important;line-height:1!important}.mainPanel .latestMain{font-size:16px!important}.mainPanel .latestMain b,.mainPanel .rawSpeech b{font-size:25px!important;line-height:1!important}.mainPanel .rawSpeech .rawLabel{font-size:10px!important;line-height:1!important}.manual .registerMuriRow,.manual:has(.v31Keypad:not([hidden])) .registerMuriRow{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important;align-items:stretch!important}.manual .registerMuriRow>button{width:100%!important;min-width:0!important;min-height:54px!important;height:54px!important;margin:0!important;padding:3px!important;box-sizing:border-box!important;font-size:clamp(11px,2.8vw,15px)!important;line-height:1.12!important}.manual .registerMuriRow .v31ReturnViewBtn{border:2px solid #1764ad!important;border-radius:9px!important;background:#eaf4ff!important;color:#07549b!important;font-weight:900!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;font-size:18px!important}.manual .registerMuriRow .v31ReturnViewBtn span{font-size:clamp(11px,2.8vw,14px)!important}.manual .registerMuriRow>button{font-size:clamp(17px,4.4vw,23px)!important;font-weight:900!important;letter-spacing:-.06em!important;padding:2px!important;line-height:1.05!important;overflow:hidden!important}.manual .registerMuriRow .v31ReturnViewBtn{font-size:clamp(19px,5vw,25px)!important;white-space:nowrap!important}.manual .registerMuriRow #cancelLastBtn{white-space:nowrap!important}.manual .registerMuriRow #muriBtn{font-size:clamp(15px,3.9vw,21px)!important;white-space:nowrap!important}.v31SectionTitle{font-size:16px;font-weight:900;color:#174f86;margin:12px 0 7px}.v31ShareBox{margin:12px 0;padding:10px;border:1px solid #8bb8df;border-radius:10px;background:#f5faff}.v31Advanced{margin:12px 0;border:1px solid #cbd5e1;border-radius:10px}.v31Advanced summary{padding:12px;font-size:14px;font-weight:800;cursor:pointer}.v31AdvancedInner{padding:8px 10px 12px}.v31AdvancedInner .eventProfileBox{margin-bottom:10px}.v31ShareBox .profileShareBtns{margin:8px 0}.v31ShareBox .profileShareBtns{display:flex;gap:8px;flex-wrap:wrap}.v31ShareBox .profileShareBtns button{min-height:48px;flex:1;min-width:120px;cursor:pointer;pointer-events:auto;position:relative;z-index:1}.v31ShareBox #profileStatus{display:block;margin:8px 0;min-height:20px}/* Legacy Android WebView: avoid :has() selector dependency for three-action layout */.manual .registerMuriRow{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important}.manual .registerMuriRow>button{min-width:0!important;width:100%!important;box-sizing:border-box!important;padding:2px!important;font-size:clamp(11px,3vw,15px)!important;letter-spacing:-.04em!important;white-space:normal!important;overflow-wrap:anywhere!important}.manual .registerMuriRow #v31ReturnViewBtn{font-size:clamp(12px,3.1vw,16px)!important;white-space:normal!important}.manual .registerMuriRow #muriBtn{font-size:clamp(10px,2.8vw,14px)!important;white-space:normal!important}/* Legacy Android: only one register button is needed when the keypad is visible. */.manual .v31StandardRegister{display:none!important}.manual .registerMuriRow{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important}.manual .registerMuriRow>button{min-width:0!important;pointer-events:auto!important;touch-action:manipulation;position:relative;z-index:2}</style></head>
+<body><div id="v31Flash" class="v31Flash" aria-live="assertive"><div id="v31FlashNo" class="v31FlashNo"></div><div id="v31FlashMeta" class="v31FlashMeta"></div></div><main class="wrap">
+<header class="appHeader"><div class="titleRow"><div id="event" class="eventTitle">大会名未設定</div><div id="eventDate" class="eventDate"></div></div><div class="infoBox"><div class="infoRow"><span id="staff">担当：未設定</span><span class="dotSep">・</span><span id="point">地点未設定</span><span class="dotSep">・</span><span id="connectionState" class="connected">● 接続中</span><span class="dotSep">・</span><span id="status" class="status">停止中</span></div><div id="destination" class="destination">保存先：標準スプレッドシート</div>
+<div id="v31FieldAlert" class="v31FieldAlert ok"><b id="v31FieldAlertMain">受付準備</b><span id="v31FieldAlertSub">状態確認中</span></div>
+<div id="v31LiveCounters" class="v31LiveCounters"><div><b id="v31CountBib">0</b><span>番号取得</span></div><div><b id="v31CountMuri">0</b><span>ムリ</span></div><div><b id="v31CountTotal">0</b><span>総受付</span></div><div><b id="v31CountQueue">0</b><span>未送信</span></div></div>
+<div class="v31StartFlow"><div class="v31StartFlowTitle"><b>本番開始チェック</b><button id="v31FieldLockBtn" type="button" class="v31FieldLockBtn">🔓 誤操作防止 OFF</button></div><div id="v31StartSteps" class="v31StartSteps"></div><div class="v31Diag"><div><b>音声診断</b><span id="v31MicState">未テスト</span><span id="v31Quality">—</span></div><button id="v31MicTestBtn" type="button">🎙 端末音声テスト</button><div id="v31MicTestResult" class="hint">本番前に「1234」などを読み上げて認識状態を確認します。</div></div><button id="v31QuickUndoBtn" type="button" class="v31QuickUndoBtn" hidden>↩ 直前1件を取消</button><div id="v31UndoInfo" class="v31UndoInfo" hidden>取消対象：なし</div><div id="v31GapFill" class="v31GapFill" hidden><b id="v31GapFillText">人数抜け：0人</b><button id="v31GapFillBtn" type="button">不足人数をムリで補完</button><button id="v31GapDismissBtn" type="button">補完しない</button></div><button id="v31ExitRaceBtn" type="button" class="v31ExitRaceBtn" hidden>本番モード終了</button></div></div></header>
+<section class="panel mainPanel"><button id="v31ManualStartBtn" type="button" class="v31ManualStartBtn">▶ 本番モード開始（手入力・音声テスト不要）</button><div class="v31VoicePackGrid"><button id="voiceBtn" class="voice" type="button">🎤 ナンバー読み上げ開始</button><div class="v31PackRow"><button id="packModeBtn" type="button" class="v31PackBtn" aria-label="集団モード OFF"><span>集団</span><span>モード</span></button><span id="packModeHint" class="hint">通常受付</span></div></div>
+<div class="timeBar"><div class="timeItem"><span>現在時刻</span><b id="currentTime">--:--:--</b></div><div class="timeItem timeItemTop"><span class="topTimeLabel">TOPまで<br>の時間</span><b id="countdown">未設定</b></div></div>
+
+<div id="v31PackCountRow" class="v31PackCountRow" hidden><span>見えた人数</span><button type="button" data-pack-count="2">2</button><button type="button" data-pack-count="3">3</button><button type="button" data-pack-count="4">4</button><button type="button" data-pack-count="5">5+</button><b id="v31PackExpected">未指定</b></div>
+<div class="manual"><div class="inputModeRow"><label for="numberInput" class="v31InlineInputLabel">直接<br>入力</label><div class="numberInputWrap"><input id="numberInput" inputmode="numeric" autocomplete="off" placeholder=" "><span class="numberInputPlaceholder">例：1234 / 101-1</span></div><button id="v31KeypadToggle" type="button" aria-expanded="false" aria-controls="v31Keypad" class="v31KeypadToggle">🔢<span>テンキー</span><span>開く</span></button></div><div id="v31Keypad" class="v31Keypad" hidden><div class="v31KeypadGrid"><button type="button" data-v31-key="1">1</button><button type="button" data-v31-key="2">2</button><button type="button" data-v31-key="3">3</button><button type="button" data-v31-key="4">4</button><button type="button" data-v31-key="5">5</button><button type="button" data-v31-key="6">6</button><button type="button" data-v31-key="7">7</button><button type="button" data-v31-key="8">8</button><button type="button" data-v31-key="9">9</button><button type="button" data-v31-key="back" class="v31KeypadBack">⌫</button><button type="button" data-v31-key="0">0</button><button id="registerBtn" type="button" class="register v31KeypadRegister">登録</button></div></div><div class="registerMuriRow"><button id="cancelLastBtn" type="button" class="cancelLast v31KeypadCancel">直前を取消</button><button id="v31ReturnViewBtn" type="button" class="v31ReturnViewBtn">画面戻し</button><button id="muriBtn" class="muri" type="button">ムリ（1人ｶｳﾝﾄ）</button></div></div>
+<div class="deleteBlock"><div class="deleteActionRow"><input id="deleteNumberInput" inputmode="numeric" autocomplete="off" placeholder="削除する番号"><button id="deleteNumberBtn" type="button">削除</button><div class="hint deleteHint">同じ番号は<br>最新の1件を<br>削除します</div></div></div>
+<div class="latestCompact"><div class="latestCell latestMain"><span>最新：</span><b id="latest">—</b><span id="latestSub"></span></div><div class="latestCell rawSpeech"><span class="rawLabel"><span>音声</span><span>認識</span></span><b id="rawSpeechValue">—</b></div></div></section>
+<section class="history"><div class="historyTitle">受付番号履歴 <span>（直近6件）</span></div><div class="historyHeader"><span>No.</span><span>ナンバー</span><span>時間</span></div><div id="history"></div></section>
+<section class="stats"><div><b id="okCount">0</b><span>番号登録</span></div><div><b id="muriCount">0</b><span>ムリ</span></div><div><b id="totalCount">0</b><span>総人数</span></div></section>
+<section class="settings"><button id="settingsBtn" type="button">⚙ 大会・地点設定</button><button id="installBtn" type="button" hidden>📱 ホーム画面に追加</button></section>
+<div id="modeBadge" hidden>マラソン</div>
+<div id="settingsPanel" class="modal" hidden><div class="dialog"><h2>大会・地点設定</h2>
+<div class="v31SectionTitle">① 大会・担当者の設定</div><p class="small">大会名・開催日・方式・地点・担当者を入力します。新規大会は下の「新規大会＋記録シートを作成」を実行してください。</p><label>大会名<input id="sEvent"></label><label>開催日<input id="sDate" type="date"></label><label>ゼッケン番号帯<select id="sBibRange"><option value="NORMAL">通常番号（1～9,999）</option><option value="MAN">万台番号（10,000～99,999）</option><option value="MIXED" selected>混在番号（1～99,999）</option></select></label><label>方式<select id="sMode"><option value="MARATHON">マラソン</option><option value="EKIDEN">駅伝（ハイフンあり）</option><option value="EKIDEN_LAP">周回型駅伝（ハイフンなし）</option><option value="RELAY">リレーマラソン</option></select></label><label>地点名<input id="sPoint" placeholder="フィニッシュ / 第1中継所 / 5km など"></label><label>担当者名<input id="sStaff"></label><label>TOP予想時刻<input id="sTop" placeholder="09:30:00"></label><label id="relayGapWrap" hidden>周回差（再読み取り無効時間・1～60分）<input id="sRelayGap" type="number" min="1" max="60" step="1" value="1"></label><label id="sheetIdWrap" hidden>保存先スプレッドシートID<input id="sSheetId" autocomplete="off"></label><div id="connectionStatus" class="hint"></div><section class="v31ShareBox"><div class="v31SectionTitle">③ スタッフへ設定を配布</div><p class="small">大会名・開催日・地点・送信先をまとめて共有。受け取ったスタッフは担当者名だけ入力します。</p><div class="profileShareBtns"><button type="button" id="makeProfileQr">QRコード作成</button><button type="button" id="copyProfileUrl">共有URLをコピー</button></div><div id="profileStatus" class="hint" role="status" aria-live="polite"></div><div id="qrShareBox" class="qrShareBox" hidden><div id="qrCode"></div><div class="profileHint">大会・地点・送信先を共有します。担当者名は各スタッフが入力してください。URLは関係者のみに配布してください。</div><button type="button" id="closeProfileQr">QRコードを閉じる</button></div></section><details class="v31Advanced"><summary>管理者向け詳細設定・過去大会の呼び出し</summary><div class="v31AdvancedInner"><p class="small">通常の新規大会作成では操作不要です。設定変更や過去大会の再利用時だけ開いてください。</p><div class="eventProfileBox"><div class="profileTitle">共有大会マスタ</div><label>共有マスタ スプレッドシートID<input id="sharedMasterId" autocomplete="off" placeholder="共有大会マスタ用スプレッドシートのID"></label><div class="profileYearRow"><label>年<input id="sharedYear" type="number" min="2000" max="2100" step="1" placeholder="2026"></label><div class="profileHint">同じ共有マスタIDをPC・スマホに設定すると、同じ大会一覧を呼び出せます。</div></div><label>共有大会<select id="sharedProfileSelect"><option value="">共有大会を選択</option></select></label><div class="profileBtns"><button type="button" id="refreshSharedMaster">一覧更新</button><button type="button" id="saveSharedMaster">共有へ登録</button><button type="button" id="loadSharedMaster">呼び出し</button></div><button type="button" id="deleteSharedMaster" class="testBtn">共有マスタから削除</button><div id="sharedMasterStatus" class="hint"></div></div>
+<div class="eventProfileBox"><div class="profileTitle">大会設定管理</div><label>保存済み大会<select id="eventProfileSelect"><option value="">保存済み大会を選択</option></select></label><div class="profileYearRow"><label>年<input id="profileYear" type="number" min="2000" max="2100" step="1" placeholder="2026"></label><div class="profileHint">大会共通設定だけをこの端末に保存します。共有URLでは地点も引き継げます。担当者名は各自入力します。</div></div><div class="profileBtns"><button type="button" id="saveEventProfile">大会設定を保存</button><button type="button" id="loadEventProfile">呼び出し</button><button type="button" id="deleteEventProfile">削除</button></div><div class="profileCopyRow"><label>複製先の年<input id="copyToYear" type="number" min="2000" max="2100" step="1"></label><button type="button" id="copyPrevProfile">前年大会から複製</button></div></div>
+<label class="v31AdminOnly">Google Apps Script URL<input id="sEndpoint" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec"></label><button type="button" id="testConnectionBtn" class="testBtn">🔗 通信確認</button></div></details><div class="dialogBtns"><button type="button" id="saveSettings">保存</button><button type="button" id="closeSettings">閉じる</button></div><div class="clearActions"><button type="button" id="clearRecordsBtn" class="clearBtn appClearBtn">アプリ内クリア</button><button type="button" id="clearPointSheetBtn" class="clearBtn sheetClearBtn">シート全消去</button></div><div id="v30RestoreMount"></div><p class="small">左：この端末の登録データだけを消去　／　右：現在の地点シートの見出し以外を全消去</p><p class="small">保存先は共有大会マスタから自動解決します。Spreadsheet IDの入力は不要です。</p></div></div></main>
+<script>const $ = id => document.getElementById(id);
+const KEY_CFG = "TEST_20261127_taikai_voice_cfg_v1";
+const KEY_REC = "TEST_20261127_taikai_voice_rec_v1";
+const KEY_QUEUE = "TEST_20261127_taikai_voice_queue_v1";
+const KEY_MAN = "TEST_20261127_taikai_voice_man_mode_v1";
+const KEY_SEQ = "TEST_20261127_taikai_voice_seq_v1";
+const KEY_PACK = "TEST_20261127_lap_number_v31_pack_mode";
+const KEY_FIELD_LOCK = "TEST_20261127_lap_number_v31_field_lock";
+
+let cfg = { event:"TEST大会", date:"2026-11-27", mode:"MARATHON", bibRange:"MIXED", point:"TEST地点", staff:"TEST", top:"", relayGap:1, endpoint:"", sheetId:"", sheetName:"" };
+let records = [], sendQueue = [], ok = 0, muri = 0, recognition = null, listening = false, restartTimer = null, deferredInstall = null, isSending = false, manMode = false, seqCounter = 0;
+let lastSpeech = "—";
+let speechCandidateTs = 0;
+let packMode = false;
+let lastRecognitionConfidence = 0;
+let lastRecognitionDelayMs = 0;
+let fieldLock = false;
+let micTestPassed = false;
+let raceLiveMode = false;
+let packExpectedCount = 0;
+let pendingGapCount = 0;
+let pendingGapCaptureTs = 0;
+
+function load(){
+  try{ Object.assign(cfg, JSON.parse(localStorage.getItem(KEY_CFG)||"{}")); }catch{}
+  cfg.relayGap = Math.max(1, Math.min(60, Number(cfg.relayGap)||1));
+  cfg.bibRange = ["NORMAL","MAN","MIXED"].includes(cfg.bibRange) ? cfg.bibRange : "MIXED";
+  cfg.sheetId = String(cfg.sheetId||"").trim();
+  cfg.sheetName = String(cfg.sheetName||"").trim();
+  try{ records = JSON.parse(localStorage.getItem(KEY_REC)||"[]"); }catch{ records=[]; }
+  try{ sendQueue = JSON.parse(localStorage.getItem(KEY_QUEUE)||"[]"); }catch{ sendQueue=[]; }
+  manMode = false; // V31: 万台は自動判定。旧端末設定は使用しない。
+  packMode = localStorage.getItem(KEY_PACK)==="1";
+  fieldLock = localStorage.getItem(KEY_FIELD_LOCK)==="1";
+  seqCounter = Number(localStorage.getItem(KEY_SEQ)||0) || 0;
+  migrateSequenceNumbers();
+  recount(); render(); processQueue();
+}
+
+function migrateSequenceNumbers(){
+  const oldest=[...records].sort((a,b)=>(Number(a.ts)||0)-(Number(b.ts)||0));
+  let max=seqCounter;
+  for(const r of oldest){
+    if(Number(r.seqNo)>0){ max=Math.max(max,Number(r.seqNo)); continue; }
+    max+=1; r.seqNo=max;
+  }
+  seqCounter=max;
+  save();
+}
+
+function save(){
+  localStorage.setItem(KEY_CFG, JSON.stringify(cfg));
+  localStorage.setItem(KEY_REC, JSON.stringify(records));
+  localStorage.setItem(KEY_QUEUE, JSON.stringify(sendQueue));
+  localStorage.removeItem(KEY_MAN);
+  localStorage.setItem(KEY_SEQ, String(seqCounter));
+  localStorage.setItem(KEY_PACK, packMode ? "1" : "0");
+  localStorage.setItem(KEY_FIELD_LOCK, fieldLock ? "1" : "0");
+}
+
+function nextSeq(){ seqCounter+=1; return seqCounter; }
+function recount(){ ok=records.filter(r=>r.recognized&&!r.cancelled&&!r.invalidGap).length; muri=records.filter(r=>!r.recognized&&!r.cancelled).length; }
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
+function now(){ return new Date().toLocaleTimeString("ja-JP",{hour12:false}); }
+function modeName(){ return cfg.mode==="EKIDEN" ? "駅伝" : cfg.mode==="EKIDEN_LAP" ? "周回型駅伝" : cfg.mode==="RELAY" ? "リレーマラソン" : "マラソン"; }
+function fmtDate(s){ if(!s)return ""; const p=s.split("-"); return p.length===3?`${Number(p[0])}年${Number(p[1])}月${Number(p[2])}日`:s; }
+function destinationLabel(){ if(cfg.sheetName)return cfg.sheetName; if(cfg.sheetId)return `ID:${cfg.sheetId}`; return "標準スプレッドシート"; }
+function topRemain(){ if(!cfg.top)return "未設定"; const p=cfg.top.split(":").map(Number); if(p.length<2)return "未設定"; const n=new Date(),t=new Date(); t.setHours(p[0],p[1],p[2]||0,0); let sec=Math.floor((t-n)/1000),sign=sec<0?"+":"-"; sec=Math.abs(sec); return sign+String(Math.floor(sec/3600)).padStart(2,"0")+":"+String(Math.floor(sec%3600/60)).padStart(2,"0")+":"+String(sec%60).padStart(2,"0"); }
+
+function renderHistory(){
+  const h=$("history"); if(!h)return;
+  const active=records.filter(r=>!r.cancelled).slice(0,6);
+  h.innerHTML=active.map(r=>{
+    let tag="";
+    if(["RELAY","EKIDEN_LAP"].includes(r.mode)&&r.invalidGap) tag='<span class="historyTag duplicateTag">時差重複</span>';
+    else if(["RELAY","EKIDEN_LAP"].includes(r.mode)&&r.lap) tag=`<span class="historyTag relayTag">${esc(r.lap)}${r.mode==="EKIDEN_LAP"?"区通過":"周目"}</span>`;
+    else if(r.suspiciousRepeat) tag='<span class="historyTag duplicateTag">重複候補</span>';
+    else if(r.duplicate) tag='<span class="historyTag duplicateTag">再登場</span>';
+    else if(r.invalidGap) tag='<span class="historyTag invalidTag">無効</span>';
+    return `<div class="row"><span>${esc(r.seqNo||"")}</span><span class="numberCell"><span class="historyNumber">${esc(r.value)}</span>${tag}</span><span>${esc(r.time)}</span></div>`;
+  }).join("");
+}
+
+
+
+
+function confirmCriticalAction(label,phrase){
+  if(fieldLock){const s=$("status");if(s)s.textContent="🔒 誤操作防止ON：先にロックを解除してください";return false;}
+  if(!confirm("【重大操作】"+label+"\n\nこの操作は通常の受付中には使用しません。\n続行しますか？"))return false;
+  const entered=prompt("最終確認です。実行する場合は「"+phrase+"」と入力してください。","");
+  if(entered!==phrase){const s=$("status");if(s)s.textContent="重大操作を中止しました";return false;}
+  return true;
+}
+
+function renderFieldLock(){
+  const btn=$("v31FieldLockBtn");if(!btn)return;
+  btn.textContent=fieldLock?"🔒 誤操作防止 ON":"🔓 誤操作防止 OFF";btn.classList.toggle("on",fieldLock);
+  // Keep reception, direct input, MURI and last-cancel usable. Lock setup/destructive controls.
+  const protectedIds=["clearBtn","sheetClearBtn","restoreBtn","sharedSaveBtn","sharedDeleteBtn","createEventBtn"];
+  protectedIds.forEach(id=>{const el=$(id);if(el)el.classList.toggle("v31LockedControl",fieldLock);});
+}
+function toggleFieldLock(){
+  fieldLock=!fieldLock;save();renderFieldLock();
+  const s=$("status");if(s)s.textContent=fieldLock?"🔒 誤操作防止ON：受付操作だけ使用できます":"🔓 誤操作防止を解除しました";
+}
+
+
+function renderStartFlow(){
+  const wrap=$("v31StartSteps");if(!wrap)return;
+  const eventOk=!!(cfg.event&&cfg.point&&cfg.staff);
+  const speechOk=!!(window.SpeechRecognition||window.webkitSpeechRecognition);
+  const networkOk=navigator.onLine;
+  const steps=[
+    ["大会・地点",eventOk],["音声対応",speechOk],["通信",networkOk],["音声テスト",micTestPassed]
+  ];
+  wrap.innerHTML=steps.map(([n,ok])=>`<span class="${ok?"ok":"ng"}">${ok?"✓":"△"} ${n}</span>`).join("");
+}
+
+
+let flashTimer=0;
+
+function flashPackAccepted(values,confidence=0){
+  if(true)return; // Normal acceptance flash disabled; rely on latest-reception display.
+  const box=$("v31Flash"),no=$("v31FlashNo"),meta=$("v31FlashMeta");if(!box||!no||!meta)return;
+  clearTimeout(flashTimer);
+  const low=Number(confidence)>0&&Number(confidence)<0.45;
+  box.className="v31Flash show"+(low?" warn":"");
+  no.style.fontSize=values.length>=5?"min(16vw,82px)":values.length>=3?"min(20vw,105px)":"min(26vw,135px)";
+  no.textContent=values.join(" → ");
+  meta.textContent=low?`⚠ 集団 ${values.length}人・認識注意 ${Math.round(Number(confidence)*100)}%`:`✓ 集団受付 ${values.length}人`;
+  flashTimer=setTimeout(()=>{box.className="v31Flash";no.style.fontSize="";},1100);
+}
+
+function flashAccepted(value,confidence=0,isMuri=false){
+  if(true)return; // Normal acceptance flash disabled.
+  const box=$("v31Flash"),no=$("v31FlashNo"),meta=$("v31FlashMeta");if(!box||!no||!meta)return;
+  clearTimeout(flashTimer);
+  const low=Number(confidence)>0&&Number(confidence)<0.45;
+  box.className="v31Flash show"+(isMuri?" muri":low?" warn":"");
+  no.textContent=isMuri?"ムリ":value;
+  meta.textContent=isMuri?"1人カウント":low?`⚠ 認識注意　確信度 ${Math.round(Number(confidence)*100)}%`:"✓ 受付";
+  flashTimer=setTimeout(()=>{box.className="v31Flash";},300);
+}
+
+function latestUndoableRecord(){
+  return records.find(r=>!r.cancelled&&!r.invalidGap)||null;
+}
+function renderQuickUndo(){
+  const b=$("v31QuickUndoBtn"),i=$("v31UndoInfo");if(!b||!i)return;
+  const r=latestUndoableRecord();
+  b.disabled=!r;
+  i.textContent=r?`取消対象：No.${r.seqNo}　${r.value}　${r.time}`:"取消対象：なし";
+}
+function quickUndoLatest(){
+  const r=latestUndoableRecord();if(!r){$("status").textContent="取消できる直前データがありません";return;}
+  const age=Math.max(0,Math.round((Date.now()-(Number(r.captureTs)||Number(r.ts)||Date.now()))/1000));
+  if(age>30&&!confirm(`直前記録「${r.value}」は${age}秒前です。取消しますか？`))return;
+  cancelRecord(r.id);
+  $("status").textContent=`↩ 直前1件を取消：${r.value}`;
+  renderQuickUndo();
+}
+
+function setRaceLiveMode(on){
+  raceLiveMode=!!on;document.body.classList.toggle("v31-race-live",raceLiveMode);
+  const exitBtn=$("v31ExitRaceBtn");if(exitBtn)exitBtn.hidden=!raceLiveMode;
+  renderStartFlow();renderQuickUndo();
+}
+function startRaceReception(){
+  const eventOk=!!(cfg.event&&cfg.point&&cfg.staff);
+  const speechOk=!!(window.SpeechRecognition||window.webkitSpeechRecognition);
+  if(!eventOk){$("status").textContent="大会・地点・担当者を設定してください";return;}
+  if(!fieldLock){fieldLock=true;save();renderFieldLock();}
+  setRaceLiveMode(true);
+  if(speechOk&&!listening)startRecognition();
+  else if(!speechOk)$("status").textContent="本番モード開始：音声非対応のため手入力で受付できます";
+}
+
+
+function renderLiveCounters(){
+  const active=records.filter(r=>!r.cancelled&&!r.invalidGap);
+  const muri=active.filter(r=>!r.recognized||r.value==="ムリ").length;
+  const bib=active.length-muri;
+  const set=(id,v)=>{const e=$(id);if(e)e.textContent=String(v);};
+  set("v31CountBib",bib);set("v31CountMuri",muri);set("v31CountTotal",active.length);set("v31CountQueue",sendQueue.length);
+  const q=$("v31CountQueue");if(q&&q.parentElement)q.parentElement.classList.toggle("queueWarn",sendQueue.length>0);
+}
+
+function renderFieldAlert(){
+  const box=$("v31FieldAlert"),main=$("v31FieldAlertMain"),sub=$("v31FieldAlertSub");if(!box||!main||!sub)return;
+  const q=sendQueue.length;
+  if(!navigator.onLine){box.className="v31FieldAlert offline";main.textContent="オフライン";sub.textContent=q?`端末保存中・未送信 ${q}件`:"端末保存で受付継続";return;}
+  if(q>=10){box.className="v31FieldAlert danger";main.textContent="未送信増加";sub.textContent=`${q}件を端末保持・自動再送中`;return;}
+  if(q>0){box.className="v31FieldAlert warn";main.textContent="送信待ち";sub.textContent=`未送信 ${q}件`;return;}
+  if(lastRecognitionConfidence>0&&lastRecognitionConfidence<0.45){box.className="v31FieldAlert warn";main.textContent="音声認識 注意";sub.textContent=`確信度 ${Math.round(lastRecognitionConfidence*100)}%`;return;}
+  box.className="v31FieldAlert ok";main.textContent=listening?"音声受付 正常":"受付準備OK";sub.textContent=lastRecognitionDelayMs?`直近認識 約${lastRecognitionDelayMs}ms`:"未送信 0件";
+}
+
+function render(){
+  $("event").textContent=cfg.event; $("eventDate").textContent=fmtDate(cfg.date); $("point").textContent=cfg.point||"地点未設定"; $("staff").textContent="担当："+(cfg.staff||"未設定"); $("destination").textContent="保存先："+destinationLabel();
+  if($("modeBadge")) $("modeBadge").textContent=modeName();
+  $("connectionState").textContent=navigator.onLine?"● 接続中":"● オフライン"; $("connectionState").className=navigator.onLine?"connected":"offline";
+  $("currentTime").textContent=now(); $("countdown").textContent=topRemain(); recount();
+  $("okCount").textContent=ok; $("muriCount").textContent=muri; $("totalCount").textContent=ok+muri;
+  const latest=records.find(r=>!r.cancelled); $("latest").textContent=latest?.value||"—"; if($("latestSub"))$("latestSub").textContent=""; if($("rawSpeechValue"))$("rawSpeechValue").textContent=lastSpeech||"—"; renderHistory();
+  $("voiceBtn").textContent=listening?"🛑 音声受付停止":"🎤 ナンバー読み上げ開始"; $("voiceBtn").classList.toggle("on",listening);
+  $("status").textContent=(listening?"●音声受付中":"停止中")+(sendQueue.length?` ⚠未送信${sendQueue.length}件`:""); $("status").classList.toggle("voiceActiveStatus",listening);
+  const pb=$("packModeBtn");if(pb){pb.innerHTML="<span>集団</span><span>モード</span>";pb.setAttribute("aria-label",packMode?"集団モード ON":"集団モード OFF");pb.title=packMode?"集団モード ON":"集団モード OFF";pb.classList.toggle("on",packMode);}
+  const ph=$("packModeHint");if(ph)ph.textContent=packMode?"連続番号をまとめて読み上げ可":"通常受付";
+  const b=$("manModeBtn"); if(b)b.hidden=true;
+  const mh=$("manModeHint");if(mh)mh.hidden=true; const rw=$("relayGapWrap");if(rw)rw.hidden=!["RELAY","EKIDEN_LAP"].includes(cfg.mode); renderFieldAlert(); renderFieldLock(); renderStartFlow(); renderPackCountControls(); renderLiveCounters();
+}
+function refreshClock(){ if($("currentTime"))$("currentTime").textContent=now(); if($("countdown"))$("countdown").textContent=topRemain(); }
+
+function normalizeSpeech(s){ return (s||"").normalize("NFKC").replace(/[\s・,、。]/g,"").replace(/[ー－―—]/g,"-").replace(/の区/g,"区"); }
+const digitKana={ゼロ:"0",レイ:"0",イチ:"1",イッ:"1",ニ:"2",ニー:"2",サン:"3",ヨン:"4",シ:"4",ゴ:"5",ロク:"6",ナナ:"7",シチ:"7",ハチ:"8",キュウ:"9",キュー:"9",ク:"9"};
+const jpRead={ゼロ:"零",レイ:"零",イチ:"一",イッ:"一",ニ:"二",ニー:"二",サン:"三",ヨン:"四",シ:"四",ゴ:"五",ロク:"六",ナナ:"七",シチ:"七",ハチ:"八",キュウ:"九",キュー:"九",ク:"九",マン:"万",マンク:"万",セン:"千",ゼン:"千",ヒャク:"百",ビャク:"百",ピャク:"百",ジュウ:"十",ジュー:"十"};
+const jpDigit={零:0,〇:0,一:1,二:2,三:3,四:4,五:5,六:6,七:7,八:8,九:9};
+function kanaDigitsToNumber(s){ let x=normalizeSpeech(s),out="",keys=Object.keys(digitKana).sort((a,b)=>b.length-a.length); while(x){let found=false;for(const k of keys)if(x.startsWith(k)){out+=digitKana[k];x=x.slice(k.length);found=true;break}if(!found)return null}if(!out||out.length>5)return null;const n=Number(out);return n>=1&&n<=99999?n:null; }
+function jpToNumber(s){ let x=normalizeSpeech(s);Object.keys(jpRead).sort((a,b)=>b.length-a.length).forEach(k=>x=x.replaceAll(k,jpRead[k]));let total=0,section=0,num=0,has=false;for(const ch of x){if(jpDigit[ch]!==undefined){num=jpDigit[ch];has=true}else if(ch==="十"||ch==="百"||ch==="千"){section+=(num||1)*({十:10,百:100,千:1000}[ch]);num=0;has=true}else if(ch==="万"){section+=num;total+=section*10000;section=0;num=0;has=true}else return null}return has?total+section+num:null; }
+function digitTextToNumber(s){ const d=s.replace(/[^0-9]/g,"");if(!d)return null;const n=Number(d);return d&&n>=1&&n<=99999?n:null; }
+function bibInRange(n){
+  n=Number(n); if(!Number.isFinite(n))return false;
+  if(cfg.bibRange==="NORMAL")return n>=1&&n<=9999;
+  if(cfg.bibRange==="MAN")return n>=10000&&n<=99999;
+  return n>=1&&n<=99999;
+}
+function parseNumber(raw){ const s=normalizeSpeech(raw); if(/むり|無理/i.test(s))return "MURI"; if(/キャンセル|きゃんせる|取り消し|とりけし|取消|戻す|もどす/.test(s))return "CANCEL"; if(cfg.mode==="EKIDEN"){let m=s.match(/(\d{1,4})-(\d{1,2})/);if(!m)m=s.match(/(\d{1,4}).{0,3}?(\d{1,2})区/);if(!m)m=s.match(/(\d{1,4})の(\d{1,2})/);if(!m)return null;const a=Number(m[1]),b=Number(m[2]);return a>=1&&a<=9999&&b>=1&&b<=25?`${a}-${b}`:null;} const candidates=[];const d=digitTextToNumber(s);if(d!==null)candidates.push({n:d,score:1});const kd=kanaDigitsToNumber(s);if(kd!==null)candidates.push({n:kd,score:8});const j=jpToNumber(s);if(j!==null)candidates.push({n:j,score:/万|千|百|十/.test(s)?10:2});candidates.sort((a,b)=>b.score-a.score);for(const c of candidates)if(bibInRange(c.n))return String(c.n);return null; }
+function relayLast(value){
+  // V31: old records may have been created before mode was stored consistently.
+  // For relay reception, find the latest valid same-number record in the current event/point.
+  const target=String(value);
+  return records.find(r=>{
+    if(r.cancelled||r.invalidGap||!r.recognized||String(r.value)!==target)return false;
+    if(r.event&&cfg.event&&r.event!==cfg.event)return false;
+    if(r.point&&cfg.point&&r.point!==cfg.point)return false;
+    return true;
+  })||null;
+}
+function timeFromTs(ts){ return new Date(ts||Date.now()).toLocaleTimeString("ja-JP",{hour12:false}); }
+function makeRecordBase(value,recognized,rawSpeech,captureTs,confidence=0,inputType=""){
+  const recognizedTs=Date.now(), acceptedTs=Number(captureTs)||recognizedTs;
+  return {id:recognizedTs+"_"+Math.random().toString(36).substr(2,5),seqNo:nextSeq(),value,recognized,time:timeFromTs(acceptedTs),ts:acceptedTs,captureTs:acceptedTs,recognizedTs,recognitionDelayMs:Math.max(0,recognizedTs-acceptedTs),confidence:Number(confidence)||0,inputType:inputType||(recognized?"音声認識":"ボタン"),event:cfg.event,date:cfg.date,point:cfg.point,staff:cfg.staff,mode:cfg.mode,rawSpeech,sheetId:cfg.sheetId||""};
+}
+
+function add(value,recognized=true,rawSpeech="",captureTs=0,confidence=0,inputType=""){
+  if(rawSpeech)lastSpeech=rawSpeech;
+  if(cfg.mode==="EKIDEN_LAP"&&recognized&&value!=="ムリ"){
+    const prev=relayLast(value),currentTs=Number(captureTs)||Date.now();
+    const prevTs=prev?(Number(prev.captureTs)||Number(prev.ts)||0):0;
+    const diff=prev?Math.max(0,(currentTs-prevTs)/1000):0;
+    if(prev&&diff<=cfg.relayGap*60){
+      const rec={...makeRecordBase(value,true,rawSpeech,captureTs,confidence,inputType),invalidGap:true,invalidSeconds:Math.round(diff),duplicate:true,duplicateSeconds:Math.round(diff),suspiciousRepeat:true,lap:prev.lap,section:prev.lap};
+      records.unshift(rec);if(cfg.endpoint)sendQueue.push(rec);save();render();(window.v31ReliableSend?window.v31ReliableSend():processQueue());
+      $("status").textContent=`⚠ ${value}：重複（${Math.round(diff)}秒差／${prev.lap||1}区通過のまま）`;return;
+    }
+    const lap=prev?(Number(prev.lap)||1)+1:1;
+    const rec={...makeRecordBase(value,true,rawSpeech,captureTs,confidence,inputType),duplicate:false,lap,section:lap};
+    records.unshift(rec);if(cfg.endpoint)sendQueue.push(rec);save();render();(window.v31ReliableSend?window.v31ReliableSend():processQueue());
+    $("status").textContent=`✓ ${value}：${lap}区通過`;return;
+  }
+  if(cfg.mode==="RELAY"&&recognized){const prev=relayLast(value);if(prev){const currentTs=Number(captureTs)||Date.now(),prevTs=Number(prev.captureTs)||Number(prev.ts)||0,diff=Math.max(0,(currentTs-prevTs)/1000);if(diff<=cfg.relayGap*60){const rec={...makeRecordBase(value,true,rawSpeech,captureTs,confidence,inputType),invalidGap:true,invalidSeconds:Math.round(diff),duplicate:true,duplicateSeconds:Math.round(diff),suspiciousRepeat:true,lap:prev.lap};records.unshift(rec);if(cfg.endpoint)sendQueue.push(rec);save();render();(window.v31ReliableSend?window.v31ReliableSend():processQueue());$("status").textContent=`⚠ ${value}：${Math.round(diff)}秒差・時差重複（${prev.lap||1}周目のまま）`;return;}}const lap=prev?(Number(prev.lap)||1)+1:1;const rec={...makeRecordBase(value,true,rawSpeech,captureTs,confidence,inputType),duplicate:false,lap};records.unshift(rec);if(cfg.endpoint)sendQueue.push(rec);save();render();(window.v31ReliableSend?window.v31ReliableSend():processQueue());return;}
+  const previous=recognized?records.find(r=>!r.cancelled&&!r.invalidGap&&r.recognized&&r.value===value):null;
+  const duplicate=!!previous;
+  const duplicateSeconds=previous?Math.max(0,Math.round(((Number(captureTs)||Date.now())-(Number(previous.captureTs)||Number(previous.ts)||0))/1000)):0;
+  const suspiciousRepeat=!!previous&&duplicateSeconds<=300;
+  const rec={...makeRecordBase(value,recognized,rawSpeech,captureTs,confidence,inputType),duplicate,duplicateSeconds,suspiciousRepeat};
+  flashAccepted(value,confidence,!recognized||value==="ムリ");records.unshift(rec);if(cfg.endpoint)sendQueue.push(rec);save();render();(window.v31ReliableSend?window.v31ReliableSend():processQueue());if(suspiciousRepeat)$("status").textContent=`⚠ ${value}：${duplicateSeconds}秒前にも受付（重複候補）`;
+  else if(duplicate)$("status").textContent=`△ ${value}：過去にも受付あり（${duplicateSeconds}秒前）`;
+}
+function showRecognitionRaw(s){ lastSpeech=s||"（空）";if($("rawSpeechValue"))$("rawSpeechValue").textContent=lastSpeech; }
+function cancelLast(){ const i=records.findIndex(r=>!r.cancelled);if(i<0){$("status").textContent="キャンセルする登録データがありません";return}const r=records[i];r.cancelled=true;r.cancelledAt=now();r.cancelledBy="キャンセル";sendQueue=sendQueue.filter(q=>q.id!==r.id);save();render();$("status").textContent=`直前の「${r.value}」をキャンセルしました`; }
+
+async function deleteNumber(){const input=$("deleteNumberInput");if(!input)return;const target=parseNumber(input.value.trim());if(!target||target==="MURI"||target==="CANCEL"){alert(cfg.mode==="EKIDEN"?"削除する駅伝番号を 125-3 の形式で入力してください。":"削除するナンバーを1～99999で入力してください。");input.focus();return;}const i=records.findIndex(r=>!r.cancelled&&String(r.value)===String(target)&&(!r.event||r.event===cfg.event)&&(!r.point||r.point===cfg.point));if(i<0){$("status").textContent=`「${target}」は現在のアプリ内登録にありません`;input.select();return;}const r=records[i],lapText=r.mode==="EKIDEN_LAP"&&r.lap?`（${r.lap}区通過${r.invalidGap?"・重複":""}）`:r.mode==="RELAY"&&r.lap?`（${r.lap}周目${r.invalidGap?"・重複":""}）`:"";if(!confirm(`「${target}」${lapText}を削除しますか？\n\n最も新しい登録1件だけを削除します。\nこの操作は元に戻せません。`))return;r.cancelled=true;r.cancelledAt=now();r.cancelledBy="番号指定削除";sendQueue=sendQueue.filter(q=>q.id!==r.id);save();render();input.value="";$("status").textContent=`「${target}」${lapText}を削除しました`;if(cfg.endpoint&&navigator.onLine){try{await fetch(cfg.endpoint,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"DELETE",id:r.id||"",seqNo:r.seqNo||"",point:r.point||cfg.point||"",value:r.value||"",mode:r.mode||cfg.mode||"",event:r.event||cfg.event||"",date:r.date||cfg.date||"",staff:r.staff||cfg.staff||"",lap:r.lap||"",time:r.time||"",sheetId:r.sheetId||cfg.sheetId||""})});$("status").textContent=`「${target}」削除送信完了`;}catch{$("status").textContent=`「${target}」はアプリから削除済・シート削除送信失敗`;}}input.focus();}
+
+async function processQueue(){if(isSending||!sendQueue.length||!cfg.endpoint||!navigator.onLine)return;isSending=true;while(sendQueue.length&&navigator.onLine){const item=sendQueue[0];try{const payload={...item,sheetId:item.sheetId||cfg.sheetId||""};const c=new AbortController(),t=setTimeout(()=>c.abort(),5000);await fetch(cfg.endpoint,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),signal:c.signal});clearTimeout(t);sendQueue.shift();save();render();}catch{break}}isSending=false;}
+function registerManual(){const v=parseNumber($("numberInput").value.trim());if(v==="CANCEL"){cancelLast();$("numberInput").value="";return}if(!v){alert(cfg.mode==="EKIDEN"?"駅伝は 125-3（1～9999×1～25区）で入力してください。":"1～99999の番号を入力してください。");return}add(v==="MURI"?"ムリ":v,v!=="MURI",$("numberInput").value.trim(),0,0,"手入力");$("numberInput").value="";if(!$("numberInput").readOnly){try{$("numberInput").focus({preventScroll:true});}catch{$("numberInput").focus();}}}
+
+function recognitionQuality(conf){
+  const n=Number(conf)||0;
+  if(!n)return {label:"確信度なし",mark:"△"};
+  if(n>=0.75)return {label:"良好 "+Math.round(n*100)+"%",mark:"●"};
+  if(n>=0.45)return {label:"注意 "+Math.round(n*100)+"%",mark:"△"};
+  return {label:"低い "+Math.round(n*100)+"%",mark:"⚠"};
+}
+function runMicTest(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const state=$("v31MicState"),quality=$("v31Quality"),result=$("v31MicTestResult"),btn=$("v31MicTestBtn");
+  if(!SR){state.textContent="非対応";quality.textContent="⚠";result.textContent="このブラウザでは音声認識を使用できません。";return;}
+  if(listening){result.textContent="本番音声受付を停止してから端末テストしてください。";return;}
+  const test=new SR();test.lang="ja-JP";test.interimResults=false;test.continuous=false;test.maxAlternatives=5;
+  let started=0;
+  btn.disabled=true;state.textContent="待機中";quality.textContent="—";result.textContent="「1234」など、実際のゼッケン番号のように読み上げてください。";
+  test.onspeechstart=()=>{started=Date.now();state.textContent="音声検知";};
+  test.onresult=e=>{const resultSet=e.results[0],best=chooseBibAlternative(resultSet),alt=best||resultSet[0],raw=best?best.raw:alt.transcript,conf=Number(best?best.confidence:alt.confidence)||0,v=best?best.value:parseNumber(raw),q=recognitionQuality(conf),delay=started?Date.now()-started:0;micTestPassed=!!v;state.textContent=v?"認識OK":"認識注意";quality.textContent=q.mark+" "+q.label;result.textContent=v?`認識：「${raw}」 → ナンバー ${v} ／ 認識時間 約${delay}ms`:`認識：「${raw}」 → ナンバー化できませんでした`;};
+  test.onerror=e=>{state.textContent="エラー";quality.textContent="⚠";result.textContent="音声認識エラー："+e.error;};
+  test.onend=()=>{btn.disabled=false;renderStartFlow();};
+  try{test.start();}catch(e){btn.disabled=false;state.textContent="開始失敗";result.textContent="音声テストを開始できませんでした。";}
+}
+
+
+function setPackExpectedCount(n){
+  packExpectedCount=Number(n)||0;
+  document.querySelectorAll("[data-pack-count]").forEach(b=>b.classList.toggle("on",Number(b.dataset.packCount)===packExpectedCount));
+  const e=$("v31PackExpected");if(e)e.textContent=packExpectedCount?(packExpectedCount>=5?"5人以上":packExpectedCount+"人"):"未指定";
+}
+function renderPackCountControls(){
+  const row=$("v31PackCountRow");if(row)row.hidden=!packMode;
+  setPackExpectedCount(packExpectedCount);
+}
+
+function showGapFill(count,captureTs){
+  pendingGapCount=Math.max(0,Number(count)||0);pendingGapCaptureTs=Number(captureTs)||Date.now();
+  const box=$("v31GapFill"),txt=$("v31GapFillText");if(!box||!txt)return;
+  box.hidden=pendingGapCount<1;txt.textContent=`人数抜け：${pendingGapCount}人`;
+}
+function clearGapFill(){pendingGapCount=0;pendingGapCaptureTs=0;const b=$("v31GapFill");if(b)b.hidden=true;}
+function fillGapWithMuri(){
+  if(pendingGapCount<1)return;
+  const n=pendingGapCount,base=pendingGapCaptureTs||Date.now();
+  for(let i=0;i<n;i++)add("ムリ",false,"集団人数抜け補完",base+i*250,0);
+  $("status").textContent=`人数抜け ${n}人を「ムリ」で補完しました`;
+  clearGapFill();
+}
+
+function warnPackCountMismatch(expected,actual,values,captureTs){
+  if(!expected)return;
+  const shortage=expected>=5?actual<5:actual<expected;
+  if(!shortage)return;
+  const missing=expected>=5?Math.max(1,5-actual):Math.max(0,expected-actual);showGapFill(missing,captureTs);
+  const box=$("v31Flash"),no=$("v31FlashNo"),meta=$("v31FlashMeta");if(box&&no&&meta){
+    clearTimeout(flashTimer);box.className="v31Flash show warn";
+    no.style.fontSize="min(20vw,105px)";no.textContent=values.join(" → ")||"—";
+    meta.textContent=`⚠ 人数抜け疑い：見えた ${expected>=5?"5+":expected}人 ／ 認識 ${actual}人`;
+    flashTimer=setTimeout(()=>{box.className="v31Flash";no.style.fontSize="";},1800);
+  }
+  const s=$("status");if(s)s.textContent=`⚠ 集団の人数抜け疑い：想定 ${expected>=5?"5+":expected}人、認識 ${actual}人`;
+}
+
+function parsePackNumbers(raw){
+  const normalized=(raw||"").normalize("NFKC").replace(/[、，,／/・]+/g," ").trim();
+  if(!normalized)return [];
+  const chunks=normalized.split(/\s+/).filter(Boolean);
+  const vals=[];
+  for(const chunk of chunks){const v=parseNumber(chunk);if(v&&v!=="MURI"&&v!=="CANCEL")vals.push(v);}
+  return vals;
+}
+function addPack(values,rawSpeech,captureTs,confidence=0){
+  const unique=[];
+  for(const v of values){if(v&&!unique.includes(v))unique.push(v);}
+  if(unique.length<2)return false;
+  const base=Number(captureTs)||Date.now();
+  unique.forEach((v,i)=>add(v,true,rawSpeech,base+i*250,confidence,"音声認識"));
+  flashPackAccepted(unique,confidence);
+  warnPackCountMismatch(packExpectedCount,unique.length,unique,base);
+  packExpectedCount=0;renderPackCountControls();
+  $("status").textContent=`集団受付：${unique.length}人（${unique.join("・")}）`;
+  return true;
+}
+function chooseBibAlternative(result){
+  const alts=[];
+  const limit=Math.min(result.length||0,5);
+  for(let i=0;i<limit;i++){
+    const a=result[i],raw=String(a.transcript||"").trim(),confidence=Number(a.confidence)||0;
+    let value=parseNumber(raw);
+    // 万台大会では音声側が 20001→2001/21 のように0を落とすことがある。
+    // 受付番号帯が10,000以上と確定している時だけ、安全側に限定して0補完候補を作る。
+    if(!value && cfg.bibRange==="MAN"){
+      const n=digitTextToNumber(normalizeSpeech(raw)) ?? kanaDigitsToNumber(normalizeSpeech(raw));
+      if(n>=1&&n<=9999){
+        const s=String(n), candidates10k=[];
+        for(let z=1;z<=5-s.length;z++){
+          const v=Number(s[0]+"0".repeat(z)+s.slice(1));
+          if(v>=10000&&v<=99999)candidates10k.push(v);
+        }
+        if(candidates10k.length)value=String(candidates10k[candidates10k.length-1]);
+      }
+    }
+    if(!value)continue;
+    let score=confidence;
+    const normalizedRaw=raw.normalize("NFKC").replace(/\\s+/g,"");
+    if(value==="MURI"||value==="CANCEL")score+=2;
+    if(/^\\d{1,5}$/.test(normalizedRaw))score+=0.35;
+    if(/[0-9０-９]/.test(raw))score+=0.15;
+    // 「二万一」「2万1」など、音声エンジンが万単位を返した候補は5桁ゼッケンとして強く優先。
+    // 単なる2001を20001へ推測変換はしない（誤補正防止）。
+    const explicitMan=/万|まん|マン/.test(raw);
+    if(explicitMan && /^\\d{5}$/.test(String(value)))score+=1.25;
+    alts.push({raw,value,confidence,score,index:i,explicitMan});
+  }
+  if(!alts.length)return null;
+  alts.sort((a,b)=>b.score-a.score||a.index-b.index);
+  return alts[0];
+}
+
+function startRecognition(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){alert("このブラウザは音声認識に対応していません。Chromeを使用してください。");return}recognition=new SR();recognition.lang="ja-JP";recognition.interimResults=false;recognition.continuous=false;recognition.maxAlternatives=5;recognition.onaudiostart=()=>{speechCandidateTs=Date.now();};
+recognition.onspeechstart=()=>{recognition._speechStartTs=Date.now();};
+recognition.onresult=e=>{const result=e.results[0];const best=chooseBibAlternative(result);const alt=best||result[0];const confidence=Number(best?best.confidence:alt.confidence)||0;const captureTs=recognition._speechStartTs||speechCandidateTs||Date.now();recognition._speechStartTs=0;speechCandidateTs=0;lastRecognitionConfidence=confidence;lastRecognitionDelayMs=Math.max(0,Date.now()-captureTs);const t=best?best.raw:alt.transcript;showRecognitionRaw(t);
+if(packMode){const pack=parsePackNumbers(t);if(pack.length>=2){addPack(pack,t,captureTs,confidence);return;}if(packExpectedCount>=2&&pack.length===1){add(pack[0],true,t,captureTs,confidence,"音声認識");warnPackCountMismatch(packExpectedCount,1,pack,captureTs);packExpectedCount=0;renderPackCountControls();return;}}
+const v=best?best.value:parseNumber(t);if(v==="CANCEL")cancelLast();else if(v==="MURI")add("ムリ",false,t,captureTs,confidence,"音声認識");else if(v)add(v,true,t,captureTs,confidence,"音声認識");else $("status").textContent=`認識できません：「${t}」`;};recognition.onerror=e=>{speechCandidateTs=0;if(e.error!=="aborted")$("status").textContent="音声認識エラー："+e.error;};recognition.onend=()=>{if(listening){clearTimeout(restartTimer);restartTimer=setTimeout(()=>{try{recognition.start()}catch{}},180)}};listening=true;render();try{recognition.start()}catch{}}
+function stopRecognition(){listening=false;clearTimeout(restartTimer);try{recognition&&recognition.abort()}catch{}render()}
+function fillSettings(){$("sEvent").value=cfg.event==="大会名未設定"?"":cfg.event;$("sDate").value=cfg.date;$("sMode").value=cfg.mode;if($("sBibRange"))$("sBibRange").value=cfg.bibRange||"MIXED";$("sPoint").value=cfg.point==="地点未設定"?"":cfg.point;$("sStaff").value=cfg.staff;$("sTop").value=cfg.top;$("sRelayGap").value=cfg.relayGap;$("sEndpoint").value=cfg.endpoint;$("sSheetId").value=cfg.sheetId||"";const rw=$("relayGapWrap");if(rw)rw.hidden=!["RELAY","EKIDEN_LAP"].includes(cfg.mode);const cs=$("connectionStatus");if(cs)cs.textContent=cfg.sheetName?`現在の保存先：${cfg.sheetName}`:"";}
+function saveSettings(){cfg.event=$("sEvent").value||"大会名未設定";cfg.date=$("sDate").value;cfg.mode=$("sMode").value;cfg.bibRange=$("sBibRange")?.value||"MIXED";cfg.point=$("sPoint").value||"地点未設定";cfg.staff=$("sStaff").value;cfg.top=$("sTop").value;cfg.relayGap=Math.max(1,Math.min(60,Number($("sRelayGap").value)||1));cfg.endpoint=$("sEndpoint").value.trim();cfg.sheetId=$("sSheetId").value.trim();cfg.sheetName="";save();$("settingsPanel").hidden=true;render();processQueue();}
+function clearRecords(){if(!confirm("この端末の登録データを全て消去します。No.も1から再開します。よろしいですか？"))return;records=[];sendQueue=[];seqCounter=0;lastSpeech="—";save();render();}
+function testDestination(){const status=$("connectionStatus"),endpoint=$("sEndpoint").value.trim();if(!endpoint){status.textContent="❌ Google Apps Script URLを入力してください";return}if(!navigator.onLine){status.textContent="❌ オフラインです";return}status.textContent="通信確認中…";const masterId=(document.getElementById("sharedMasterId")?.value||localStorage.getItem("TEST_20261127_taikai_voice_shared_master_id_v1")||"").trim();const date=$("sDate").value||"";const payload={action:"PING",sheetId:"",masterId,year:date.slice(0,4)||String(new Date().getFullYear()),event:$("sEvent").value||"接続確認",date,mode:$("sMode").value||"MARATHON",point:$("sPoint").value||"接続確認",staff:$("sStaff").value||"",time:now(),id:"PING_"+Date.now()};fetch(endpoint,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=UTF-8"},body:JSON.stringify(payload),cache:"no-store"}).then(()=>{status.textContent="✅ GASへ通信要求を送信できました。保存先IDの入力は不要です。";}).catch(()=>{status.textContent="❌ 通信確認できませんでした。GAS URL・通信状態を確認してください。";});}
+
+// Optional manual keypad. Default OFF; standard device keyboard remains available.
+(function initV31Keypad(){
+  const toggle=$("v31KeypadToggle"),pad=$("v31Keypad"),input=$("numberInput");
+  if(!toggle||!pad||!input)return;
+  let active=false;
+  function setActive(on){
+    active=!!on;pad.hidden=!active;toggle.setAttribute("aria-expanded",String(active));
+    toggle.innerHTML=active?"🔢<span>テンキー</span><span>閉じる</span>":"🔢<span>テンキー</span><span>開く</span>";
+    input.readOnly=active;
+    if(active)input.blur();
+  }
+  const style=document.createElement("style");
+  style.textContent=".manual:has(.v31Keypad:not([hidden])){overflow-anchor:none}.v31Keypad,.v31KeypadGrid,.v31KeypadGrid button{touch-action:none!important;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}";
+  document.head.appendChild(style);
+  pad.addEventListener("touchmove",e=>{if(active&&e.cancelable)e.preventDefault();},{passive:false});
+  pad.addEventListener("mousedown",e=>{if(active)e.preventDefault();});
+  setActive(true); // Direct-entry-first: keypad visible on opening the app.
+  toggle.addEventListener("click",()=>setActive(!active));
+  pad.querySelectorAll("[data-v31-key]").forEach(button=>button.addEventListener("click",()=>{
+    const key=button.getAttribute("data-v31-key");
+    if(key==="back")input.value=input.value.slice(0,-1);
+    else if(input.value.length<12)input.value+=key;
+    input.dispatchEvent(new Event("input",{bubbles:true}));
+  }));
+  $("v31KeypadClear")?.addEventListener("click",()=>{input.value="";input.dispatchEvent(new Event("input",{bubbles:true}));});
+})();
+function v31ConfirmCancel(){
+  const r=records.find(r=>!r.cancelled);
+  if(!r){$("status").textContent="キャンセルする登録データがありません";return;}
+  const id=r.id;
+  if(!window.confirm("直前の「"+r.value+"」を取り消しますか？\n\nOK：取消実行\nキャンセル：手入力に戻る"))return;
+  if(records.find(r=>!r.cancelled)?.id!==id){$("status").textContent="直前の記録が変わったため取消を中止しました";return;}
+  cancelLast();
+}
+function v31RestoreInputView(){
+  const panel=document.querySelector(".manual");
+  if(!panel)return;
+  const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+  const align=()=>{
+    const sticky=document.querySelector(".mainPanel .timeBar");
+    const vv=window.visualViewport;
+    const viewportTop=isIOS&&vv?vv.offsetTop:0;
+    const root=document.scrollingElement||document.documentElement;
+    const needed=Math.max(0,Math.ceil(panel.getBoundingClientRect().top+window.pageYOffset-(sticky?.getBoundingClientRect().height||64)-16-viewportTop));
+    if(needed>root.scrollHeight-root.clientHeight){let spacer=document.getElementById("v31ReturnScrollSpace");if(!spacer){spacer=document.createElement("div");spacer.id="v31ReturnScrollSpace";spacer.style.pointerEvents="none";document.body.appendChild(spacer);}spacer.style.height=(spacer.offsetHeight+needed-(root.scrollHeight-root.clientHeight)+8)+"px";}
+    const clearance=(sticky?.getBoundingClientRect().height||64)+16+viewportTop;
+    const delta=panel.getBoundingClientRect().top-clearance;
+    if(Math.abs(delta)>2)window.scrollTo(0,Math.max(0,window.pageYOffset+delta));
+  };
+  requestAnimationFrame(()=>requestAnimationFrame(align));
+  if(isIOS){setTimeout(align,120);setTimeout(align,380);}
+}
+$("v31ReturnViewBtn")?.addEventListener("click",()=>{document.activeElement?.blur?.();v31RestoreInputView();});
+$("v31ManualStartBtn")?.addEventListener("click",()=>{if(!(cfg.event&&cfg.point&&cfg.staff)){$("status").textContent="大会・地点・担当者を設定してください";return;}if(listening)stopRecognition();if(!fieldLock){fieldLock=true;save();renderFieldLock();}setRaceLiveMode(true);$("status").textContent="本番モード開始：手入力で受付できます";v31RestoreInputView();});
+$("voiceBtn").addEventListener("click",()=>listening?stopRecognition():startRaceReception());
+$("packModeBtn")?.addEventListener("click",()=>{packMode=!packMode;if(!packMode)packExpectedCount=0;save();render();});
+document.querySelectorAll("[data-pack-count]").forEach(b=>b.addEventListener("click",()=>setPackExpectedCount(Number(b.dataset.packCount))));
+$("v31MicTestBtn")?.addEventListener("click",runMicTest);
+$("v31FieldLockBtn")?.addEventListener("click",()=>{toggleFieldLock();renderStartFlow();});
+$("v31QuickUndoBtn")?.addEventListener("click",quickUndoLatest);
+$("v31GapFillBtn")?.addEventListener("click",fillGapWithMuri);
+$("v31GapDismissBtn")?.addEventListener("click",()=>{clearGapFill();$("status").textContent="人数抜け補完を見送りました";});
+$("v31ExitRaceBtn")?.addEventListener("click",()=>{if(!confirm("本番モードを終了しますか？\n受付データは消えません。"))return;stopRecognition();setRaceLiveMode(false);});
+window.addEventListener("online",renderStartFlow);window.addEventListener("offline",renderStartFlow);$("registerBtn").addEventListener("click",registerManual);$("v31StandardRegister")?.addEventListener("click",registerManual);$("numberInput").addEventListener("keydown",e=>{if(e.key==="Enter")registerManual()});$("muriBtn").addEventListener("click",()=>{add("ムリ",false,"ボタン",0,0,"ボタン");});$("cancelLastBtn").addEventListener("click",()=>{v31ConfirmCancel();});$("deleteNumberBtn").addEventListener("click",deleteNumber);$("deleteNumberInput").addEventListener("keydown",e=>{if(e.key==="Enter")deleteNumber()});$("manModeBtn")?.addEventListener("click",()=>{});$("settingsBtn").addEventListener("click",()=>{if(listening)stopRecognition();if(raceLiveMode)setRaceLiveMode(false);fillSettings();$("settingsPanel").hidden=false});$("closeSettings").addEventListener("click",()=>$("settingsPanel").hidden=true);$("saveSettings").addEventListener("click",saveSettings);$("clearRecordsBtn").addEventListener("click",clearRecords);$("testConnectionBtn").addEventListener("click",testDestination);$("sMode").addEventListener("change",()=>{const rw=$("relayGapWrap");if(rw)rw.hidden=!["RELAY","EKIDEN_LAP"].includes($("sMode").value);});window.addEventListener("online",()=>{render();(window.v31ReliableSend?window.v31ReliableSend():processQueue());});window.addEventListener("offline",render);setInterval(refreshClock,500);window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstall=e;$("installBtn").hidden=false});$("installBtn").addEventListener("click",async()=>{if(deferredInstall){deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;$("installBtn").hidden=true}});if(false){
+  let swReloading=false;
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{
+    if(swReloading)return;
+    swReloading=true;
+    location.reload();
+  });
+  navigator.serviceWorker.register("sw.js?v=31prod15",{updateViaCache:"none"}).then(reg=>{
+    reg.update().catch(()=>{});
+    document.addEventListener("visibilitychange",()=>{
+      if(document.visibilityState==="visible")reg.update().catch(()=>{});
+    });
+    window.addEventListener("pageshow",()=>reg.update().catch(()=>{}));
+  }).catch(()=>{});
+}
+load();window.deleteNumber=deleteNumber;
+
+// =====================================================
+// V30：大会別記録スプレッドシート自動作成
+// =====================================================
+(function setupV30(){
+  const VERSION_TEXT="LAP NUMBER　V＝３１";
+  const MASTER_ID_KEY="TEST_20261127_taikai_voice_shared_master_id_v1";
+
+  const style=document.createElement("style");
+  style.textContent=`
+    .eventDate::before{content:"${VERSION_TEXT}"!important}
+    .dialog h2::after{content:"${VERSION_TEXT}"!important}
+    .v30CreateBox{border:1px solid #7bb993;background:#f5fbf7;border-radius:11px;padding:11px;margin:4px 0 14px}
+    .v30CreateTitle{font-size:17px;font-weight:900;color:#176b36;margin-bottom:6px}
+    .v30CreateHint{font-size:11px;color:#667085;line-height:1.45;margin:4px 0 8px}
+    .v30CreateBtn{width:100%;min-height:46px;border:0;border-radius:9px;background:#176b36;color:#fff;font-weight:900;font-size:16px;padding:8px}
+    .v30CreateBtn:disabled{opacity:.55}
+    .v30CreateStatus{font-size:12px;color:#667085;margin-top:7px;line-height:1.45;overflow-wrap:anywhere}
+  `;
+  document.head.appendChild(style);
+
+  const sharedBox=document.getElementById("sharedMasterId")?.closest(".eventProfileBox");
+  if(!sharedBox)return;
+
+  const box=document.createElement("div");
+  box.className="v30CreateBox";
+  box.innerHTML=`
+    <div class="v30CreateTitle">新規大会作成</div>
+    <div class="v30CreateHint">大会名・開催日・方式を入力して実行すると、記録用スプレッドシートを自動作成して共有大会マスタへ登録します。保存先IDの手入力は不要です。同じ「年＋大会名」が既にある場合は新規作成しません。</div>
+    <button type="button" id="createEventSpreadsheetV30" class="v30CreateBtn">新規大会＋記録シートを作成</button>
+    <div id="createEventStatusV30" class="v30CreateStatus"></div>
+  `;
+  const topLabel=document.getElementById("sTop")?.closest("label");
+  // 大会基本情報の入力直後に新規大会作成ボタンを置く。
+  if(topLabel?.parentNode)topLabel.insertAdjacentElement("afterend",box);
+  else sharedBox.parentNode.insertBefore(box,sharedBox);
+
+  // V31 / GAS V13: Android Chrome -> one-way POST. GAS completes CREATE_EVENT server-side.
+  async function createEventViaPost(params){
+    const endpoint=(document.getElementById("sEndpoint")?.value||cfg.endpoint||"").trim();
+    if(!endpoint)throw new Error("Google Apps Script URLが未設定です");
+    // Android Chromeで確実にGASへ到達させる一方向POST。
+    // text/plain は no-cors のCORS-safelisted Content-Typeなのでpreflightを発生させない。
+    await fetch(endpoint,{
+      method:"POST",
+      mode:"no-cors",
+      headers:{"Content-Type":"text/plain;charset=UTF-8"},
+      body:JSON.stringify(params),
+      cache:"no-store"
+    });
+    return {ok:true,queued:true};
+  }
+
+  async function createEventSpreadsheetV30(){
+    const btn=document.getElementById("createEventSpreadsheetV30");
+    const status=document.getElementById("createEventStatusV30");
+    const event=(document.getElementById("sEvent")?.value||"").trim();
+    const date=document.getElementById("sDate")?.value||"";
+    const mode=document.getElementById("sMode")?.value||"MARATHON";
+    const year=Number((date||"").slice(0,4))||Number(document.getElementById("profileYear")?.value)||new Date().getFullYear();
+    const masterId=(document.getElementById("sharedMasterId")?.value||localStorage.getItem(MASTER_ID_KEY)||"").trim();
+    const endpoint=(document.getElementById("sEndpoint")?.value||cfg.endpoint||"").trim();
+
+    if(!event){alert("大会名を入力してください。");return;}
+    if(!date){alert("開催日を入力してください。");return;}
+    if(!masterId){alert("共有マスタ スプレッドシートIDを入力してください。");return;}
+    if(!endpoint){alert("Google Apps Script URLを入力してください。");return;}
+    if(!navigator.onLine){alert("オフラインのため新規大会を作成できません。");return;}
+
+    const cleanEvent=event.replace(new RegExp("^"+year+"[ _　-]*"),"").trim()||event;
+    const filename=`${year}_${cleanEvent}_記録データ`;
+    const relayGap=(document.getElementById("sRelayGap")?.value||"").trim();
+    if(!confirm(`${filename}\n\n記録用スプレッドシートを新規作成し、共有大会マスタへ登録します。\nよろしいですか？`))return;
+
+    btn.disabled=true;
+    status.textContent="新規大会を作成中… Googleドライブと共有大会マスタを確認しています。";
+    try{
+      const res=await createEventViaPost({
+        action:"CREATE_EVENT",
+        masterId,
+        year:String(year),
+        event,
+        date,
+        mode,
+        relayGap,
+        endpoint
+      });
+      if(document.getElementById("profileYear"))document.getElementById("profileYear").value=year;
+      if(document.getElementById("sharedYear"))document.getElementById("sharedYear").value=year;
+      localStorage.setItem(MASTER_ID_KEY,masterId);
+      localStorage.setItem("TEST_20261127_lap_number_active_master_id",masterId);
+      document.getElementById("sSheetId").value="";
+      cfg.sheetId="";
+      status.textContent=`📤 ${filename} の作成要求をGASへ送信しました。保存先IDの入力は不要です。記録送信時にGASが共有大会マスタから保存先を自動解決します。`;
+      document.getElementById("saveSettings")?.click();
+    }catch(e){
+      status.textContent=`❌ GASへの大会作成要求を送信できませんでした：${e.message||e}。共有大会マスタID・GAS URL・通信状態を確認してください。`;
+    }finally{
+      btn.disabled=false;
+    }
+  }
+
+  document.getElementById("createEventSpreadsheetV30").addEventListener("click",createEventSpreadsheetV30);
+})();</script>
+
+
+
+<script>
+(function(){
+  const PROFILE_KEY='TEST_20261127_taikai_voice_event_profiles_v1';
+  const MASTER_ID_KEY='TEST_20261127_taikai_voice_shared_master_id_v1';
+  const byId=id=>document.getElementById(id);
+  let sharedProfiles=[];
+  function readProfiles(){try{const v=JSON.parse(localStorage.getItem(PROFILE_KEY)||'[]');return Array.isArray(v)?v:[];}catch{return [];}}
+  function writeProfiles(list){localStorage.setItem(PROFILE_KEY,JSON.stringify(list));}
+  function defaultYear(){const d=(byId('sDate')&&byId('sDate').value)||'';const y=Number(d.slice(0,4));return y||new Date().getFullYear();}
+  function refreshProfiles(selectedId=''){const sel=byId('eventProfileSelect');if(!sel)return;const list=readProfiles().sort((a,b)=>(Number(b.year)||0)-(Number(a.year)||0)||String(a.event||'').localeCompare(String(b.event||''),'ja'));sel.innerHTML='<option value="">保存済み大会を選択</option>'+list.map(p=>`<option value="${String(p.id).replace(/"/g,'&quot;')}">${p.year||''}｜${String(p.event||'大会名未設定').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</option>`).join('');if(selectedId)sel.value=selectedId;const py=byId('profileYear');if(py&&!py.value)py.value=defaultYear();}
+  function currentProfileFromForm(){return {id:'',year:Number(byId('profileYear').value)||defaultYear(),event:(byId('sEvent').value||'').trim(),date:byId('sDate').value||'',mode:byId('sMode').value||'MARATHON',top:(byId('sTop').value||'').trim(),relayGap:Math.max(1,Math.min(60,Number(byId('sRelayGap').value)||1)),sheetId:(byId('sSheetId').value||'').trim(),endpoint:(byId('sEndpoint').value||'').trim(),point:(byId('sPoint').value||'').trim(),bibRange:byId('sBibRange').value,masterId:(byId('sharedMasterId').value||localStorage.getItem(MASTER_ID_KEY)||'').trim(),updatedAt:Date.now()};}
+  function applyProfileToForm(p){const point=byId('sPoint').value,staff=byId('sStaff').value,top=byId('sTop').value;byId('profileYear').value=p.year||defaultYear();byId('sEvent').value=p.event||'';byId('sDate').value=p.date||'';byId('sMode').value=p.mode||'MARATHON';byId('sRelayGap').value=p.relayGap||1;byId('sSheetId').value=p.sheetId||'';byId('sEndpoint').value=p.endpoint||'';byId('sPoint').value=point;byId('sStaff').value=staff;byId('sTop').value=top;const rw=byId('relayGapWrap');if(rw)rw.hidden=byId('sMode').value!=='RELAY';}
+  function saveEventProfile(){const p=currentProfileFromForm(),st=byId('profileStatus');if(!p.event){alert('大会名を入力してください。');return;}if(!p.sheetId){alert('保存先スプレッドシートIDを入力してください。');return;}let list=readProfiles();const existing=list.find(x=>Number(x.year)===Number(p.year)&&String(x.event||'').trim()===p.event);if(existing){if(!confirm(`${p.year}｜${p.event}\n\n同じ年・大会名の設定があります。上書きしますか？`))return;p.id=existing.id;list=list.map(x=>x.id===existing.id?p:x);}else{p.id='EV_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);list.push(p);}writeProfiles(list);refreshProfiles(p.id);st.textContent=`✅ ${p.year}｜${p.event} を保存しました`;}
+  function loadEventProfile(){const id=byId('eventProfileSelect').value,st=byId('profileStatus');if(!id){alert('保存済み大会を選択してください。');return;}const p=readProfiles().find(x=>x.id===id);if(!p){refreshProfiles();return;}const activeCount=(typeof records!=='undefined'&&Array.isArray(records))?records.filter(r=>!r.cancelled).length:0;const changing=(byId('sEvent').value||'').trim()!==String(p.event||'').trim()||(byId('sSheetId').value||'').trim()!==String(p.sheetId||'').trim();if(activeCount>0&&changing&&!confirm(`現在このスマホに受付データが ${activeCount}件 残っています。\n\n大会設定を「${p.event}」へ切り替えますか？\n受付履歴は自動では消去しません。`))return;applyProfileToForm(p);st.textContent=`✅ ${p.year}｜${p.event} を呼び出しました。地点「${cfg.point}」を設定しました。担当者名を入力して保存してください。下の「保存」で確定してください。`;}
+  function deleteEventProfile(){const id=byId('eventProfileSelect').value;if(!id){alert('削除する保存済み大会を選択してください。');return;}const list=readProfiles(),p=list.find(x=>x.id===id);if(!p)return;if(!confirm(`${p.year}｜${p.event}\n\n保存済みの大会設定だけを削除します。\nスプレッドシートや受付データは削除しません。\nよろしいですか？`))return;writeProfiles(list.filter(x=>x.id!==id));refreshProfiles();byId('profileStatus').textContent='保存済み大会設定を削除しました';}
+  function copyPreviousProfile(){const id=byId('eventProfileSelect').value;if(!id){alert('複製元の保存済み大会を選択してください。');return;}const p=readProfiles().find(x=>x.id===id);if(!p)return;const toYear=Number(byId('copyToYear').value)||Number(p.year)+1;if(toYear<2000||toYear>2100){alert('複製先の年を確認してください。');return;}const copy={...p,id:'',year:toYear,sheetId:'',updatedAt:Date.now()};if(copy.date&&/^\d{4}-\d{2}-\d{2}$/.test(copy.date))copy.date=String(toYear).padStart(4,'0')+copy.date.slice(4);applyProfileToForm(copy);byId('copyToYear').value=toYear;byId('profileStatus').textContent=`✅ ${p.year}年の設定を ${toYear}年用に複製しました。TOP予想時刻は現在値を保持します。新しい保存先スプレッドシートIDを入力して「大会設定を保存」を押してください。`;}
+  function encodeProfile(p){const x={v:1,year:p.year,event:p.event,date:p.date,mode:p.mode,top:p.top,relayGap:p.relayGap,sheetId:p.sheetId,endpoint:p.endpoint,point:p.point||'',bibRange:p.bibRange||'MIXED',masterId:p.masterId||''};return btoa(unescape(encodeURIComponent(JSON.stringify(x)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
+  function decodeProfile(s){try{const b=s.replace(/-/g,'+').replace(/_/g,'/');const pad=b+'='.repeat((4-b.length%4)%4);return JSON.parse(decodeURIComponent(escape(atob(pad))));}catch{return null;}}
+  function profileShareUrl(){const p=currentProfileFromForm();if(!p.event){alert('大会名を入力してください。');return '';}if(!p.endpoint){alert('送信先が未設定です。管理者向け詳細設定の「Google Apps Script URL」を確認してください。');return '';}if(!p.sheetId&&!p.masterId){alert('共有大会マスタIDが未設定です。管理者向け詳細設定を確認してください。');return '';}if(!p.point){alert('地点名を入力してください。');return '';}return location.origin+location.pathname+'?v=31sharefix2&cfg='+encodeURIComponent(encodeProfile(p));}
+  function hideProfileQr(){const box=byId('qrShareBox'),qr=byId('qrCode');if(qr)qr.innerHTML='';if(box)box.hidden=true;}
+  function makeProfileQr(){byId("profileStatus").textContent="QRコードを準備中…";const url=profileShareUrl();if(!url)return;const box=byId('qrShareBox'),qr=byId('qrCode');qr.innerHTML='';box.hidden=false;if(typeof QRCode==='undefined'){byId('profileStatus').textContent='QRコード部品を読み込めませんでした。通信状態を確認してください。';return;}new QRCode(qr,{text:url,width:220,height:220,correctLevel:QRCode.CorrectLevel.M});byId('profileStatus').textContent='✅ 大会設定QRコードを作成しました';}
+  async function copyProfileUrl(){byId("profileStatus").textContent="共有URLを準備中…";const url=profileShareUrl();if(!url)return;try{await navigator.clipboard.writeText(url);byId('profileStatus').textContent='✅ 大会設定の共有URLをコピーしました';}catch{prompt('このURLをコピーしてください。',url);}}
+  function importSharedProfile(){const raw=new URLSearchParams(location.search).get('cfg');if(!raw)return;const p=decodeProfile(raw);if(!p||!p.event)return;const activeCount=(typeof records!=='undefined'&&Array.isArray(records))?records.filter(r=>!r.cancelled).length:0;let msg=`大会設定「${p.event}」をこのスマホへ取り込みますか？\n\n地点名は「${p.point||'現状維持'}」に設定します。担当者名は各自入力してください。`;if(activeCount>0)msg+=`\n\n※受付データが ${activeCount}件 残っています。`;if(!confirm(msg))return;try{cfg.event=p.event||'大会名未設定';cfg.date=p.date||'';cfg.mode=p.mode||'MARATHON';cfg.relayGap=Math.max(1,Math.min(60,Number(p.relayGap)||1));cfg.sheetId=p.sheetId||'';cfg.endpoint=p.endpoint||'';cfg.point=p.point||cfg.point;cfg.bibRange=['NORMAL','MAN','MIXED'].includes(p.bibRange)?p.bibRange:'MIXED';cfg.staff='';cfg.sheetName='';if(p.masterId){localStorage.setItem(MASTER_ID_KEY,p.masterId);localStorage.setItem('TEST_20261127_lap_number_active_master_id',p.masterId);byId('sharedMasterId').value=p.masterId;}save();render();processQueue();let list=readProfiles();const year=Number(p.year)||Number((p.date||'').slice(0,4))||new Date().getFullYear();const existing=list.find(x=>Number(x.year)===year&&String(x.event||'').trim()===String(p.event||'').trim());const stored={id:existing?existing.id:'EV_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),year,event:p.event,date:p.date||'',mode:p.mode||'MARATHON',top:p.top||'',relayGap:Math.max(1,Math.min(60,Number(p.relayGap)||1)),sheetId:p.sheetId||'',endpoint:p.endpoint||'',updatedAt:Date.now()};if(existing)list=list.map(x=>x.id===existing.id?stored:x);else list.push(stored);writeProfiles(list);alert(`「${p.event}」の大会設定を取り込みました。\n地点・担当者・TOP予想時刻は変更していません。`);history.replaceState({},'',location.pathname+'?v=31share1119');}catch(e){alert('大会設定の取り込みに失敗しました。');}}
+  function jsonpMaster(params){return new Promise((resolve,reject)=>{const cb='masterCb_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);const endpoint=(byId('sEndpoint').value||'').trim();if(!endpoint){reject(new Error('Apps Script URL未設定'));return;}const qs=new URLSearchParams({...params,callback:cb,_t:String(Date.now())});const script=document.createElement('script');const timer=setTimeout(()=>{cleanup();reject(new Error('timeout'));},20000);function cleanup(){clearTimeout(timer);try{delete window[cb];}catch{}script.remove();}window[cb]=data=>{cleanup();resolve(data);};script.onerror=()=>{cleanup();reject(new Error('network'));};script.src=endpoint+(endpoint.includes('?')?'&':'?')+qs.toString();document.body.appendChild(script);});}
+  function sharedMasterId(){return (byId('sharedMasterId').value||'').trim();}
+  function saveSharedMasterId(){const id=sharedMasterId();if(id)localStorage.setItem(MASTER_ID_KEY,id);else localStorage.removeItem(MASTER_ID_KEY);}
+  function populateSharedSelect(list){sharedProfiles=Array.isArray(list)?list:[];const sel=byId('sharedProfileSelect');sel.innerHTML='<option value="">共有大会を選択</option>'+sharedProfiles.map(p=>`<option value="${String(p.id||'').replace(/"/g,'&quot;')}">${p.year||''}｜${String(p.event||'大会名未設定').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</option>`).join('');}
+  async function refreshSharedMaster(){const st=byId('sharedMasterStatus'),masterId=sharedMasterId(),year=Number(byId('sharedYear').value)||defaultYear();if(!masterId){st.textContent='❌ 共有マスタ スプレッドシートIDを入力してください';return;}if(!(byId('sEndpoint').value||'').trim()){st.textContent='❌ Google Apps Script URLを入力してください';return;}saveSharedMasterId();st.textContent='共有大会一覧を取得中…';try{const res=await jsonpMaster({action:'MASTER_LIST',masterId,year:String(year)});if(!res||!res.ok)throw new Error(res&&res.error||'取得失敗');populateSharedSelect(res.items||[]);st.textContent=`✅ ${year}年の共有大会 ${sharedProfiles.length}件を取得しました`;}catch(e){st.textContent='❌ 一覧取得エラー：'+String(e&&e.message||e)+' ｜ V30互換JSONP通信';console.error('MASTER_LIST bridge error',e);}}
+  async function saveToSharedMaster(){const st=byId('sharedMasterStatus'),masterId=sharedMasterId(),endpoint=(byId('sEndpoint').value||'').trim(),p=currentProfileFromForm();if(!masterId){alert('共有マスタ スプレッドシートIDを入力してください。');return;}if(!endpoint){alert('Google Apps Script URLを入力してください。');return;}if(!p.event){alert('大会名を入力してください。');return;}if(!p.sheetId){alert('大会の保存先スプレッドシートIDを入力してください。');return;}saveSharedMasterId();st.textContent='共有マスタへ登録中…';try{await fetch(endpoint,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'MASTER_SAVE',masterId,profile:p})});setTimeout(refreshSharedMaster,700);st.textContent=`✅ ${p.year}｜${p.event} を共有マスタへ送信しました`;}catch(e){st.textContent='❌ 共有マスタへの送信に失敗しました';}}
+  function loadFromSharedMaster(){const id=byId('sharedProfileSelect').value,st=byId('sharedMasterStatus');if(!id){alert('共有大会を選択してください。');return;}const p=sharedProfiles.find(x=>String(x.id)===String(id));if(!p){alert('共有大会を再取得してください。');return;}const activeCount=(typeof records!=='undefined'&&Array.isArray(records))?records.filter(r=>!r.cancelled).length:0;if(activeCount>0&&!confirm(`現在このスマホに受付データが ${activeCount}件 残っています。\n\n共有大会「${p.event}」を呼び出しますか？\n受付履歴は自動では消去しません。`))return;applyProfileToForm(p);st.textContent=`✅ ${p.year}｜${p.event} を共有マスタから呼び出しました。地点・担当者・TOP予想時刻は変更していません。下の「保存」で確定してください。`;}
+  async function deleteFromSharedMaster(){const id=byId('sharedProfileSelect').value,st=byId('sharedMasterStatus'),masterId=sharedMasterId(),endpoint=(byId('sEndpoint').value||'').trim();if(!id){alert('共有マスタから削除する大会を選択してください。');return;}const p=sharedProfiles.find(x=>String(x.id)===String(id));if(!p)return;if(!confirm(`${p.year}｜${p.event}\n\n共有大会マスタから削除します。\n大会データのスプレッドシート自体は削除しません。\nよろしいですか？`))return;try{await fetch(endpoint,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'MASTER_DELETE',masterId,id})});st.textContent='✅ 共有マスタへ削除命令を送信しました';setTimeout(refreshSharedMaster,700);}catch(e){st.textContent='❌ 共有マスタ削除の送信に失敗しました';}}
+  const settingsBtn=byId('settingsBtn');if(settingsBtn)settingsBtn.addEventListener('click',()=>setTimeout(()=>{hideProfileQr();refreshProfiles();const py=byId('profileYear');if(py)py.value=defaultYear();const sy=byId('sharedYear');if(sy&&!sy.value)sy.value=defaultYear();const mid=byId('sharedMasterId');if(mid&&!mid.value)mid.value=localStorage.getItem(MASTER_ID_KEY)||'';},0));
+  if(byId('sDate'))byId('sDate').addEventListener('change',()=>{const py=byId('profileYear');if(py&&byId('sDate').value)py.value=Number(byId('sDate').value.slice(0,4))||py.value;});
+  byId('eventProfileSelect').addEventListener('change',()=>{hideProfileQr();const p=readProfiles().find(x=>x.id===byId('eventProfileSelect').value);if(p)byId('copyToYear').value=Number(p.year)+1;});
+  byId('saveEventProfile').addEventListener('click',saveEventProfile);byId('loadEventProfile').addEventListener('click',loadEventProfile);byId('deleteEventProfile').addEventListener('click',deleteEventProfile);byId('copyPrevProfile').addEventListener('click',copyPreviousProfile);byId('makeProfileQr').addEventListener('click',makeProfileQr);byId('copyProfileUrl').addEventListener('click',copyProfileUrl);byId('closeProfileQr').addEventListener('click',hideProfileQr);refreshProfiles();
+  byId('sharedMasterId').value=localStorage.getItem(MASTER_ID_KEY)||'';byId('sharedYear').value=defaultYear();byId('sharedMasterId').addEventListener('change',saveSharedMasterId);byId('refreshSharedMaster').addEventListener('click',function(e){e.preventDefault();e.stopImmediatePropagation();const st=byId('sharedMasterStatus');st.textContent='ℹ V9ではスマホ側の一覧取得は使用しません。新規大会作成または記録送信を実行してください。GAS側が共有マスタID＋年＋大会名から記録先を自動解決します。';},true);byId('saveSharedMaster').addEventListener('click',saveToSharedMaster);byId('loadSharedMaster').addEventListener('click',loadFromSharedMaster);byId('deleteSharedMaster').addEventListener('click',deleteFromSharedMaster);
+  const originalCloseSettings=byId('closeSettings');if(originalCloseSettings)originalCloseSettings.addEventListener('click',hideProfileQr);const originalSaveSettings=byId('saveSettings');if(originalSaveSettings)originalSaveSettings.addEventListener('click',hideProfileQr);
+  const btn=byId('clearPointSheetBtn');if(btn){btn.addEventListener('click',async function(){const point=(byId('sPoint').value||'').trim(),sheetId=(byId('sSheetId').value||'').trim(),endpoint=(byId('sEndpoint').value||'').trim(),status=byId('connectionStatus'),event=(byId('sEvent').value||'').trim(),date=byId('sDate').value||'',masterId=(byId('sharedMasterId')?.value||localStorage.getItem(MASTER_ID_KEY)||'').trim(),year=date.slice(0,4)||String(new Date().getFullYear());if(!point){alert('地点名を設定してください。');return;}if(!sheetId&&!masterId){alert('共有大会マスタIDを設定してください。');return;}if(!event){alert('大会名を設定してください。');return;}if(!endpoint){alert('Google Apps Script URLを設定してください。');return;}if(!navigator.onLine){alert('オフラインのため実行できません。');return;}if(!confirm('「'+point+'」シートの登録データをすべて削除します。\n\n1行目の見出しは残します。\n他の地点シートは削除しません。\nこの操作は元に戻せません。\n\n実行しますか？'))return;if(!confirm('最終確認です。\n「'+point+'」シートのデータを本当に全消去しますか？'))return;status.textContent='「'+point+'」シートへ全消去命令を送信中…';btn.disabled=true;try{await fetch(endpoint,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify({action:'CLEAR_POINT',sheetId,masterId,year,event,date,point,staff:byId('sStaff').value||''})});status.textContent='✅ 「'+point+'」シートへ全消去命令を送信しました。スプレッドシートで確認してください。';}catch(e){status.textContent='❌ シート全消去の送信に失敗しました。通信状態を確認してください。';}finally{btn.disabled=false;}});}
+  function updateCountdownColor(){const el=byId('countdown');if(!el)return;const text=(el.textContent||'').trim();el.classList.toggle('countdownBefore',text.startsWith('-'));}
+  setInterval(updateCountdownColor,250);setTimeout(updateCountdownColor,50);setTimeout(importSharedProfile,150);
+})();
+</script>
+<script>
+/* Legacy Android: bind critical field controls independently and show immediate feedback. */
+(function(){
+  function bind(id,handler){
+    var el=document.getElementById(id);
+    if(!el)return;
+    el.addEventListener("click",function(ev){
+      ev.stopImmediatePropagation();
+      var status=document.getElementById("status");
+      try{handler(status);}catch(err){if(status)status.textContent="操作エラー："+(err&&err.message||err);}
+    },true);
+  }
+  bind("cancelLastBtn",function(status){
+    if(typeof v31ConfirmCancel!=="function")throw Error("取消確認処理を読み込めません");
+    v31ConfirmCancel();
+  });
+  bind("muriBtn",function(status){
+    if(typeof add!=="function")throw Error("ムリ登録処理を読み込めません");
+    add("ムリ",false,"ボタン",0,0,"ボタン");
+    if(status)status.textContent="ムリ（1人）を登録しました";
+  });
+  bind("v31ReturnViewBtn",function(status){
+    if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
+    if(typeof v31RestoreInputView!=="function")throw Error("画面戻し処理を読み込めません");
+    v31RestoreInputView();
+    if(status)status.textContent="画面位置を戻しました";
+  });
+})();
+</script></body></html>
