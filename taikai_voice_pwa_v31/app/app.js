@@ -273,7 +273,7 @@ function cancelLast(){ const i=records.findIndex(r=>!r.cancelled);if(i<0){$("sta
 async function deleteNumber(){const input=$("deleteNumberInput");if(!input)return;const target=parseNumber(input.value.trim());if(!target||target==="MURI"||target==="CANCEL"){alert(cfg.mode==="EKIDEN"?"削除する駅伝番号を 125-3 の形式で入力してください。":"削除するナンバーを1～99999で入力してください。");input.focus();return;}const i=records.findIndex(r=>!r.cancelled&&String(r.value)===String(target)&&(!r.event||r.event===cfg.event)&&(!r.point||r.point===cfg.point));if(i<0){$("status").textContent=`「${target}」は現在のアプリ内登録にありません`;input.select();return;}const r=records[i],lapText=r.mode==="EKIDEN_LAP"&&r.lap?`（${r.lap}区通過${r.invalidGap?"・重複":""}）`:r.mode==="RELAY"&&r.lap?`（${r.lap}周目${r.invalidGap?"・重複":""}）`:"";if(!confirm(`「${target}」${lapText}を削除しますか？\n\n最も新しい登録1件だけを削除します。\nこの操作は元に戻せません。`))return;r.cancelled=true;r.cancelledAt=now();r.cancelledBy="番号指定削除";sendQueue=sendQueue.filter(q=>q.id!==r.id);save();render();input.value="";$("status").textContent=`「${target}」${lapText}を削除しました`;if(cfg.endpoint&&navigator.onLine){try{await fetch(cfg.endpoint,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"DELETE",id:r.id||"",seqNo:r.seqNo||"",point:r.point||cfg.point||"",value:r.value||"",mode:r.mode||cfg.mode||"",event:r.event||cfg.event||"",date:r.date||cfg.date||"",staff:r.staff||cfg.staff||"",lap:r.lap||"",time:r.time||"",sheetId:r.sheetId||cfg.sheetId||""})});$("status").textContent=`「${target}」削除送信完了`;}catch{$("status").textContent=`「${target}」はアプリから削除済・シート削除送信失敗`;}}input.focus();}
 
 async function processQueue(){if(isSending||!sendQueue.length||!cfg.endpoint||!navigator.onLine)return;isSending=true;while(sendQueue.length&&navigator.onLine){const item=sendQueue[0];try{const payload={...item,sheetId:item.sheetId||cfg.sheetId||""};const c=new AbortController(),t=setTimeout(()=>c.abort(),5000);await fetch(cfg.endpoint,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),signal:c.signal});clearTimeout(t);sendQueue.shift();save();render();}catch{break}}isSending=false;}
-function registerManual(){const v=parseNumber($("numberInput").value.trim());if(v==="CANCEL"){cancelLast();$("numberInput").value="";return}if(!v){alert(cfg.mode==="EKIDEN"?"駅伝は 125-3（1～9999×1～25区）で入力してください。":"1～99999の番号を入力してください。");return}add(v==="MURI"?"ムリ":v,v!=="MURI",$("numberInput").value.trim(),0,0,"手入力");$("numberInput").value="";$("numberInput").focus();}
+function registerManual(){const v=parseNumber($("numberInput").value.trim());if(v==="CANCEL"){cancelLast();$("numberInput").value="";return}if(!v){alert(cfg.mode==="EKIDEN"?"駅伝は 125-3（1～9999×1～25区）で入力してください。":"1～99999の番号を入力してください。");return}add(v==="MURI"?"ムリ":v,v!=="MURI",$("numberInput").value.trim(),0,0,"手入力");$("numberInput").value="";if(!$("numberInput").readOnly){try{$("numberInput").focus({preventScroll:true});}catch{$("numberInput").focus();}}}
 
 function recognitionQuality(conf){
   const n=Number(conf)||0;
@@ -414,6 +414,11 @@ function testDestination(){const status=$("connectionStatus"),endpoint=$("sEndpo
     input.readOnly=active;
     if(active)input.blur();
   }
+  const style=document.createElement("style");
+  style.textContent=".manual:has(.v31Keypad:not([hidden])){overflow-anchor:none}.v31Keypad,.v31KeypadGrid,.v31KeypadGrid button{touch-action:none!important;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}";
+  document.head.appendChild(style);
+  pad.addEventListener("touchmove",e=>{if(active&&e.cancelable)e.preventDefault();},{passive:false});
+  pad.addEventListener("mousedown",e=>{if(active)e.preventDefault();});
   setActive(true); // Direct-entry-first: keypad visible on opening the app.
   toggle.addEventListener("click",()=>setActive(!active));
   pad.querySelectorAll("[data-v31-key]").forEach(button=>button.addEventListener("click",()=>{
@@ -424,6 +429,14 @@ function testDestination(){const status=$("connectionStatus"),endpoint=$("sEndpo
   }));
   $("v31KeypadClear")?.addEventListener("click",()=>{input.value="";input.dispatchEvent(new Event("input",{bubbles:true}));});
 })();
+function v31ConfirmCancel(){
+  const r=records.find(r=>!r.cancelled);
+  if(!r){$("status").textContent="キャンセルする登録データがありません";return;}
+  const id=r.id;
+  if(!window.confirm("直前の「"+r.value+"」を取り消しますか？\n\nOK：取消実行\nキャンセル：手入力に戻る"))return;
+  if(records.find(r=>!r.cancelled)?.id!==id){$("status").textContent="直前の記録が変わったため取消を中止しました";return;}
+  cancelLast();
+}
 function v31RestoreInputView(){
   const panel=document.querySelector(".manual");
   if(!panel)return;
@@ -432,6 +445,9 @@ function v31RestoreInputView(){
     const sticky=document.querySelector(".mainPanel .timeBar");
     const vv=window.visualViewport;
     const viewportTop=isIOS&&vv?vv.offsetTop:0;
+    const root=document.scrollingElement||document.documentElement;
+    const needed=Math.max(0,Math.ceil(panel.getBoundingClientRect().top+window.pageYOffset-(sticky?.getBoundingClientRect().height||64)-16-viewportTop));
+    if(needed>root.scrollHeight-root.clientHeight){let spacer=document.getElementById("v31ReturnScrollSpace");if(!spacer){spacer=document.createElement("div");spacer.id="v31ReturnScrollSpace";spacer.style.pointerEvents="none";document.body.appendChild(spacer);}spacer.style.height=(spacer.offsetHeight+needed-(root.scrollHeight-root.clientHeight)+8)+"px";}
     const clearance=(sticky?.getBoundingClientRect().height||64)+16+viewportTop;
     const delta=panel.getBoundingClientRect().top-clearance;
     if(Math.abs(delta)>2)window.scrollTo(0,Math.max(0,window.pageYOffset+delta));
@@ -450,7 +466,7 @@ $("v31QuickUndoBtn")?.addEventListener("click",quickUndoLatest);
 $("v31GapFillBtn")?.addEventListener("click",fillGapWithMuri);
 $("v31GapDismissBtn")?.addEventListener("click",()=>{clearGapFill();$("status").textContent="人数抜け補完を見送りました";});
 $("v31ExitRaceBtn")?.addEventListener("click",()=>{if(!confirm("本番モードを終了しますか？\n受付データは消えません。"))return;stopRecognition();setRaceLiveMode(false);});
-window.addEventListener("online",renderStartFlow);window.addEventListener("offline",renderStartFlow);$("registerBtn").addEventListener("click",registerManual);$("v31StandardRegister")?.addEventListener("click",registerManual);$("numberInput").addEventListener("keydown",e=>{if(e.key==="Enter")registerManual()});$("muriBtn").addEventListener("click",()=>{add("ムリ",false,"ボタン",0,0,"ボタン");});$("cancelLastBtn").addEventListener("click",()=>{cancelLast();});$("deleteNumberBtn").addEventListener("click",deleteNumber);$("deleteNumberInput").addEventListener("keydown",e=>{if(e.key==="Enter")deleteNumber()});$("manModeBtn")?.addEventListener("click",()=>{});$("settingsBtn").addEventListener("click",()=>{if(listening)stopRecognition();if(raceLiveMode)setRaceLiveMode(false);fillSettings();$("settingsPanel").hidden=false});$("closeSettings").addEventListener("click",()=>$("settingsPanel").hidden=true);$("saveSettings").addEventListener("click",saveSettings);$("clearRecordsBtn").addEventListener("click",clearRecords);$("testConnectionBtn").addEventListener("click",testDestination);$("sMode").addEventListener("change",()=>{const rw=$("relayGapWrap");if(rw)rw.hidden=!["RELAY","EKIDEN_LAP"].includes($("sMode").value);});window.addEventListener("online",()=>{render();(window.v31ReliableSend?window.v31ReliableSend():processQueue());});window.addEventListener("offline",render);setInterval(refreshClock,500);window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstall=e;$("installBtn").hidden=false});$("installBtn").addEventListener("click",async()=>{if(deferredInstall){deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;$("installBtn").hidden=true}});if("serviceWorker" in navigator){
+window.addEventListener("online",renderStartFlow);window.addEventListener("offline",renderStartFlow);$("registerBtn").addEventListener("click",registerManual);$("v31StandardRegister")?.addEventListener("click",registerManual);$("numberInput").addEventListener("keydown",e=>{if(e.key==="Enter")registerManual()});$("muriBtn").addEventListener("click",()=>{add("ムリ",false,"ボタン",0,0,"ボタン");});$("cancelLastBtn").addEventListener("click",()=>{v31ConfirmCancel();});$("deleteNumberBtn").addEventListener("click",deleteNumber);$("deleteNumberInput").addEventListener("keydown",e=>{if(e.key==="Enter")deleteNumber()});$("manModeBtn")?.addEventListener("click",()=>{});$("settingsBtn").addEventListener("click",()=>{if(listening)stopRecognition();if(raceLiveMode)setRaceLiveMode(false);fillSettings();$("settingsPanel").hidden=false});$("closeSettings").addEventListener("click",()=>$("settingsPanel").hidden=true);$("saveSettings").addEventListener("click",saveSettings);$("clearRecordsBtn").addEventListener("click",clearRecords);$("testConnectionBtn").addEventListener("click",testDestination);$("sMode").addEventListener("change",()=>{const rw=$("relayGapWrap");if(rw)rw.hidden=!["RELAY","EKIDEN_LAP"].includes($("sMode").value);});window.addEventListener("online",()=>{render();(window.v31ReliableSend?window.v31ReliableSend():processQueue());});window.addEventListener("offline",render);setInterval(refreshClock,500);window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstall=e;$("installBtn").hidden=false});$("installBtn").addEventListener("click",async()=>{if(deferredInstall){deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;$("installBtn").hidden=true}});if("serviceWorker" in navigator){
   let swReloading=false;
   navigator.serviceWorker.addEventListener("controllerchange",()=>{
     if(swReloading)return;
