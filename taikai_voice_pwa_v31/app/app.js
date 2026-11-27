@@ -21,6 +21,18 @@ let packExpectedCount = 0;
 let pendingGapCount = 0;
 let pendingGapCaptureTs = 0;
 
+let v31AudioContext=null;
+function v31PlaySound(kind){
+ if(cfg.keySound===false||listening)return;
+ try{
+ const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+ const ac=v31AudioContext||(v31AudioContext=new AC());
+ const play=()=>{if(cfg.keySound===false||listening||ac.state!=="running")return;
+ const tones={digit:[1050],back:[550],register:[1050,1450],muri:[740],cancel:[350]}[kind]||[];
+ tones.forEach((hz,i)=>{const duration=kind==="muri"?0.18:0.05;const start=ac.currentTime+i*0.075,o=ac.createOscillator(),g=ac.createGain();o.type="sine";o.frequency.value=hz;g.gain.setValueAtTime(0,start);g.gain.linearRampToValueAtTime(0.25,start+0.004);g.gain.exponentialRampToValueAtTime(0.001,start+duration-0.005);o.connect(g);g.connect(ac.destination);o.start(start);o.stop(start+duration);});};
+ if(ac.state==="running")play();else ac.resume().then(play).catch(()=>{});
+ }catch{}
+}
 function load(){
   try{ Object.assign(cfg, JSON.parse(localStorage.getItem(KEY_CFG)||"{}")); }catch{}
   cfg.relayGap = Math.max(1, Math.min(60, Number(cfg.relayGap)||1));
@@ -273,7 +285,7 @@ function cancelLast(){ const i=records.findIndex(r=>!r.cancelled);if(i<0){$("sta
 async function deleteNumber(){const input=$("deleteNumberInput");if(!input)return;const target=parseNumber(input.value.trim());if(!target||target==="MURI"||target==="CANCEL"){alert(cfg.mode==="EKIDEN"?"削除する駅伝番号を 125-3 の形式で入力してください。":"削除するナンバーを1～99999で入力してください。");input.focus();return;}const i=records.findIndex(r=>!r.cancelled&&String(r.value)===String(target)&&(!r.event||r.event===cfg.event)&&(!r.point||r.point===cfg.point));if(i<0){$("status").textContent=`「${target}」は現在のアプリ内登録にありません`;input.select();return;}const r=records[i],lapText=r.mode==="EKIDEN_LAP"&&r.lap?`（${r.lap}区通過${r.invalidGap?"・重複":""}）`:r.mode==="RELAY"&&r.lap?`（${r.lap}周目${r.invalidGap?"・重複":""}）`:"";if(!confirm(`「${target}」${lapText}を削除しますか？\n\n最も新しい登録1件だけを削除します。\nこの操作は元に戻せません。`))return;r.cancelled=true;r.cancelledAt=now();r.cancelledBy="番号指定削除";sendQueue=sendQueue.filter(q=>q.id!==r.id);save();render();input.value="";$("status").textContent=`「${target}」${lapText}を削除しました`;if(cfg.endpoint&&navigator.onLine){try{await fetch(cfg.endpoint,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"DELETE",id:r.id||"",seqNo:r.seqNo||"",point:r.point||cfg.point||"",value:r.value||"",mode:r.mode||cfg.mode||"",event:r.event||cfg.event||"",date:r.date||cfg.date||"",staff:r.staff||cfg.staff||"",lap:r.lap||"",time:r.time||"",sheetId:r.sheetId||cfg.sheetId||""})});$("status").textContent=`「${target}」削除送信完了`;}catch{$("status").textContent=`「${target}」はアプリから削除済・シート削除送信失敗`;}}input.focus();}
 
 async function processQueue(){if(isSending||!sendQueue.length||!cfg.endpoint||!navigator.onLine)return;isSending=true;while(sendQueue.length&&navigator.onLine){const item=sendQueue[0];try{const payload={...item,sheetId:item.sheetId||cfg.sheetId||""};const c=new AbortController(),t=setTimeout(()=>c.abort(),5000);await fetch(cfg.endpoint,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),signal:c.signal});clearTimeout(t);sendQueue.shift();save();render();}catch{break}}isSending=false;}
-function registerManual(){if(listening)stopRecognition();const v=parseNumber($("numberInput").value.trim());if(v==="CANCEL"){cancelLast();$("numberInput").value="";return}if(!v){alert(cfg.mode==="EKIDEN"?"駅伝は 125-3（1～9999×1～25区）で入力してください。":"1～99999の番号を入力してください。");return}add(v==="MURI"?"ムリ":v,v!=="MURI",$("numberInput").value.trim(),0,0,"手入力");$("numberInput").value="";if(!$("numberInput").readOnly){try{$("numberInput").focus({preventScroll:true});}catch{$("numberInput").focus();}}}
+function registerManual(){if(listening)stopRecognition();const v=parseNumber($("numberInput").value.trim());if(v==="CANCEL"){cancelLast();$("numberInput").value="";return}if(!v){alert(cfg.mode==="EKIDEN"?"駅伝は 125-3（1～9999×1～25区）で入力してください。":"1～99999の番号を入力してください。");return}add(v==="MURI"?"ムリ":v,v!=="MURI",$("numberInput").value.trim(),0,0,"手入力");v31PlaySound(v==="MURI"?"muri":"register");$("numberInput").value="";if(!$("numberInput").readOnly){try{$("numberInput").focus({preventScroll:true});}catch{$("numberInput").focus();}}}
 
 function recognitionQuality(conf){
   const n=Number(conf)||0;
@@ -410,8 +422,8 @@ const v=best?best.value:parseNumber(t);if(v==="CANCEL")v31ConfirmCancel();else i
  listening=true;render();try{rec.start();}catch{stopRecognition();}
 }
 function stopRecognition(){listening=false;clearTimeout(restartTimer);const rec=recognition;recognition=null;speechCandidateTs=0;try{rec&&rec.abort()}catch{}render();}
-function fillSettings(){$("sEvent").value=cfg.event==="大会名未設定"?"":cfg.event;$("sDate").value=cfg.date;$("sMode").value=cfg.mode;if($("sBibRange"))$("sBibRange").value=cfg.bibRange||"MIXED";$("sPoint").value=cfg.point==="地点未設定"?"":cfg.point;$("sStaff").value=cfg.staff;$("sTop").value=cfg.top;$("sRelayGap").value=cfg.relayGap;$("sEndpoint").value=cfg.endpoint;$("sSheetId").value=cfg.sheetId||"";const rw=$("relayGapWrap");if(rw)rw.hidden=!["RELAY","EKIDEN_LAP"].includes(cfg.mode);const cs=$("connectionStatus");if(cs)cs.textContent=cfg.sheetName?`現在の保存先：${cfg.sheetName}`:"";}
-function saveSettings(){cfg.event=$("sEvent").value||"大会名未設定";cfg.date=$("sDate").value;cfg.mode=$("sMode").value;cfg.bibRange=$("sBibRange")?.value||"MIXED";cfg.point=$("sPoint").value||"地点未設定";cfg.staff=$("sStaff").value;cfg.top=$("sTop").value;cfg.relayGap=Math.max(1,Math.min(60,Number($("sRelayGap").value)||1));cfg.endpoint=$("sEndpoint").value.trim();cfg.sheetId=$("sSheetId").value.trim();cfg.sheetName="";save();$("settingsPanel").hidden=true;render();processQueue();}
+function fillSettings(){if($("sKeySound"))$("sKeySound").checked=cfg.keySound!==false;$("sEvent").value=cfg.event==="大会名未設定"?"":cfg.event;$("sDate").value=cfg.date;$("sMode").value=cfg.mode;if($("sBibRange"))$("sBibRange").value=cfg.bibRange||"MIXED";$("sPoint").value=cfg.point==="地点未設定"?"":cfg.point;$("sStaff").value=cfg.staff;$("sTop").value=cfg.top;$("sRelayGap").value=cfg.relayGap;$("sEndpoint").value=cfg.endpoint;$("sSheetId").value=cfg.sheetId||"";const rw=$("relayGapWrap");if(rw)rw.hidden=!["RELAY","EKIDEN_LAP"].includes(cfg.mode);const cs=$("connectionStatus");if(cs)cs.textContent=cfg.sheetName?`現在の保存先：${cfg.sheetName}`:"";}
+function saveSettings(){if($("sKeySound"))cfg.keySound=$("sKeySound").checked;cfg.event=$("sEvent").value||"大会名未設定";cfg.date=$("sDate").value;cfg.mode=$("sMode").value;cfg.bibRange=$("sBibRange")?.value||"MIXED";cfg.point=$("sPoint").value||"地点未設定";cfg.staff=$("sStaff").value;cfg.top=$("sTop").value;cfg.relayGap=Math.max(1,Math.min(60,Number($("sRelayGap").value)||1));cfg.endpoint=$("sEndpoint").value.trim();cfg.sheetId=$("sSheetId").value.trim();cfg.sheetName="";save();$("settingsPanel").hidden=true;render();processQueue();}
 function clearRecords(){if(!confirm("この端末の登録データを全て消去します。No.も1から再開します。よろしいですか？"))return;records=[];sendQueue=[];seqCounter=0;lastSpeech="—";save();render();}
 function testDestination(){const status=$("connectionStatus"),endpoint=$("sEndpoint").value.trim();if(!endpoint){status.textContent="❌ Google Apps Script URLを入力してください";return}if(!navigator.onLine){status.textContent="❌ オフラインです";return}status.textContent="通信確認中…";const masterId=(document.getElementById("sharedMasterId")?.value||localStorage.getItem("taikai_voice_shared_master_id_v1")||"").trim();const date=$("sDate").value||"";const payload={action:"PING",sheetId:"",masterId,year:date.slice(0,4)||String(new Date().getFullYear()),event:$("sEvent").value||"接続確認",date,mode:$("sMode").value||"MARATHON",point:$("sPoint").value||"接続確認",staff:$("sStaff").value||"",time:now(),id:"PING_"+Date.now()};fetch(endpoint,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=UTF-8"},body:JSON.stringify(payload),cache:"no-store"}).then(()=>{status.textContent="✅ GASへ通信要求を送信できました。保存先IDの入力は不要です。";}).catch(()=>{status.textContent="❌ 通信確認できませんでした。GAS URL・通信状態を確認してください。";});}
 
@@ -433,13 +445,19 @@ function testDestination(){const status=$("connectionStatus"),endpoint=$("sEndpo
   pad.addEventListener("mousedown",e=>{if(active)e.preventDefault();});
   setActive(true); // Direct-entry-first: keypad visible on opening the app.
   toggle.addEventListener("click",()=>setActive(!active));
-  pad.querySelectorAll("[data-v31-key]").forEach(button=>button.addEventListener("click",()=>{
+  pad.querySelectorAll("[data-v31-key]").forEach(button=>{
+  const key=button.getAttribute("data-v31-key");
+  const enter=()=>{
     if(listening)stopRecognition();
-    const key=button.getAttribute("data-v31-key");
-    if(key==="back")input.value=input.value.slice(0,-1);
-    else if(input.value.length<12)input.value+=key;
+    if(key==="back"){input.value=input.value.slice(0,-1);v31PlaySound("back");}
+    else if(input.value.length<12){input.value+=key;v31PlaySound("digit");}
     input.dispatchEvent(new Event("input",{bubbles:true}));
-  }));
+  };
+  if(/^[0-9]$/.test(key)&&window.PointerEvent){
+    button.addEventListener("pointerdown",e=>{if(e.button!==0||!e.isPrimary)return;e.preventDefault();enter();});
+    button.addEventListener("click",e=>{e.preventDefault();if(e.detail===0&&!e.pointerType)enter();});
+  }else button.addEventListener("click",enter);
+  });
   $("v31KeypadClear")?.addEventListener("click",()=>{input.value="";input.dispatchEvent(new Event("input",{bubbles:true}));});
 })();
 function v31ConfirmCancel(){
@@ -448,7 +466,7 @@ function v31ConfirmCancel(){
   const id=r.id;
   if(!window.confirm("直前の「"+r.value+"」を取り消しますか？\n\nOK：取消実行\nキャンセル：手入力に戻る"))return;
   if(records.find(r=>!r.cancelled)?.id!==id){$("status").textContent="直前の記録が変わったため取消を中止しました";return;}
-  cancelLast();
+  cancelLast();v31PlaySound("cancel");
 }
 function v31RestoreInputView(){
   const panel=document.querySelector(".manual");
@@ -486,7 +504,7 @@ window.addEventListener("online",renderStartFlow);window.addEventListener("offli
     swReloading=true;
     location.reload();
   });
-  navigator.serviceWorker.register("sw.js?v=31prod17",{updateViaCache:"none"}).then(reg=>{
+  navigator.serviceWorker.register("sw.js?v=31prod18",{updateViaCache:"none"}).then(reg=>{
     reg.update().catch(()=>{});
     document.addEventListener("visibilitychange",()=>{
       if(document.visibilityState==="visible")reg.update().catch(()=>{});
